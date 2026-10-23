@@ -1,0 +1,127 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 480" width="100%" height="100%">
+  <defs>
+    <linearGradient id="tenantCardBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#141a29" />
+      <stop offset="100%" stop-color="#0f1522" />
+    </linearGradient>
+    <linearGradient id="upiGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#06b6d4" />
+      <stop offset="100%" stop-color="#3b82f6" />
+    </linearGradient>
+    <linearGradient id="alertGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#f59e0b" />
+      <stop offset="100%" stop-color="#f43f5e" />
+    </linearGradient>
+  </defs>
+
+  <!-- Container Box -->
+  <rect width="800" height="480" rx="16" fill="#090d16" stroke="rgba(255,255,255,0.08)" stroke-width="1.5" />
+
+  <!-- Window Header -->
+  <rect x="0" y="0" width="800" height="42" rx="16" fill="#0f1523" />
+  <rect x="0" y="26" width="800" height="16" fill="#0f1523" />
+  <circle cx="24" cy="21" r="6" fill="#f43f5e" />
+  <circle cx="44" cy="21" r="6" fill="#f59e0b" />
+  <circle cx="64" cy="21" r="6" fill="#10b981" />
+  <text x="400" y="26" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="12" font-weight="600" fill="#64748b">Verified Tenant Self-Service Portal</text>
+
+  <!-- Content Body -->
+  <g transform="translate(30, 62)">
+    <!-- Top KPI Cards Row -->
+    <g transform="translate(0, 0)">
+      <!-- Card 1: Balance Due -->
+      <rect width="235" height="110" rx="12" fill="url(#tenantCardBg)" stroke="rgba(244,63,94,0.3)" stroke-width="1.5" />
+      <text x="20" y="32" font-family="-apple-system, sans-serif" font-size="11" font-weight="700" fill="#f43f5e">OUTSTANDING BALANCE</text>
+      <text x="20" y="68" font-family="'Space Grotesk', monospace, sans-serif" font-size="26" font-weight="800" fill="#f8fafc">₹5,644.00</text>
+      <text x="20" y="92" font-family="-apple-system, sans-serif" font-size="11" fill="#94a3b8">Rent: ₹5,000 + Elec: ₹644</text>
+
+      <!-- Card 2: Next Due Date -->
+      <g transform="translate(252, 0)">
+        <rect width="235" height="110" rx="12" fill="url(#tenantCardBg)" stroke="rgba(245,158,11,0.3)" stroke-width="1.5" />
+        <text x="20" y="32" font-family="-apple-system, sans-serif" font-size="11" font-weight="700" fill="#f59e0b">PAYMENT DUE DATE</text>
+        <text x="20" y="68" font-family="'Space Grotesk', monospace, sans-serif" font-size="26" font-weight="800" fill="#f8fafc">05 Nov 2026</text>
+        <text x="20" y="92" font-family="-apple-system, sans-serif" font-size="11" fill="#10b981">● 13 Days Remaining</text>
+      </g>
+
+      <!-- Card 3: 1-Tap UPI Pay Button -->
+      <g transform="translate(505, 0)">
+        <rect width="235" height="110" rx="12" fill="url(#tenantCardBg)" stroke="rgba(56,189,248,0.3)" stroke-width="1.5" />
+        <text x="20" y="32" font-family="-apple-system, sans-serif" font-size="11" font-weight="700" fill="#38bdf8">DIRECT UPI SETTLEMENT</text>
+        <g transform="translate(20, 48)">
+          <rect width="195" height="42" rx="8" fill="url(#upiGrad)" />
+          <text x="97" y="26" text-anchor="middle" font-family="-apple-system, sans-serif" font-size="13" font-weight="700" fill="#ffffff">⚡ Pay ₹5,644 via UPI</text>
+        </g>
+      </g>
+    </g>
+
+    <!-- Bottom Section: Landlord Info & Past Receipts Table -->
+    <g transform="translate(0, 130)">
+      <!-- Left: Landlord Info Card -->
+      <rect width="250" height="255" rx="12" fill="url(#tenantCardBg)" stroke="rgba(255,255,255,0.06)" stroke-width="1" />
+      <text x="20" y="32" font-family="-apple-system, sans-serif" font-size="12" font-weight="700" fill="#a5b4fc">LANDLORD CONTACT</text>
+      <circle cx="40" cy="72" r="20" fill="rgba(99,102,241,0.2)" />
+      <text x="40" y="77" text-anchor="middle" font-size="16">👤</text>
+      <text x="70" y="68" font-family="-apple-system, sans-serif" font-size="13" font-weight="700" fill="#f8fafc">Dilip Sharma</text>
+      <text x="70" y="86" font-family="-apple-system, sans-serif" font-size="11" fill="#94a3b8">+91 98765 43210</text>
+
+      <line x1="20" y1="110" x2="230" y2="110" stroke="rgba(255,255,255,0.08)" />
+
+      <text x="20" y="136" font-family="-apple-system, sans-serif" font-size="11" font-weight="600" fill="#94a3b8">ASSIGNED PREMISES</text>
+      <text x="20" y="156" font-family="-apple-system, sans-serif" font-size="12.5" font-weight="600" fill="#f8fafc">Room 1 (Ground Floor)</text>
+      <text x="20" y="174" font-family="-apple-system, sans-serif" font-size="11" fill="#64748b">Meter Serial: MTR-101</text>
+
+      <text x="20" y="210" font-family="-apple-system, sans-serif" font-size="11" font-weight="600" fill="#94a3b8">UPI VPA</text>
+      <text x="20" y="228" font-family="'Space Grotesk', monospace, sans-serif" font-size="11.5" font-weight="600" fill="#38bdf8">dilip.sharma@okhdfcbank</text>
+    </g>
+
+    <!-- Right: Tenant Invoices Table -->
+    <g transform="translate(265, 130)">
+      <rect width="475" height="255" rx="12" fill="url(#tenantCardBg)" stroke="rgba(255,255,255,0.06)" stroke-width="1" />
+      <text x="24" y="32" font-family="-apple-system, sans-serif" font-size="12" font-weight="700" fill="#f8fafc">YOUR INVOICES &amp; STATEMENTS</text>
+
+      <!-- Table Header -->
+      <g transform="translate(24, 50)">
+        <rect width="427" height="30" rx="6" fill="#1b2438" />
+        <text x="14" y="20" font-family="-apple-system, sans-serif" font-size="10.5" font-weight="700" fill="#94a3b8">BILL #</text>
+        <text x="110" y="20" font-family="-apple-system, sans-serif" font-size="10.5" font-weight="700" fill="#94a3b8">MONTH</text>
+        <text x="200" y="20" font-family="-apple-system, sans-serif" font-size="10.5" font-weight="700" fill="#94a3b8">AMOUNT</text>
+        <text x="290" y="20" font-family="-apple-system, sans-serif" font-size="10.5" font-weight="700" fill="#94a3b8">STATUS</text>
+        <text x="370" y="20" font-family="-apple-system, sans-serif" font-size="10.5" font-weight="700" fill="#94a3b8">ACTION</text>
+      </g>
+
+      <!-- Row 1 -->
+      <g transform="translate(24, 90)">
+        <text x="14" y="22" font-family="-apple-system, sans-serif" font-size="11.5" font-weight="700" fill="#f8fafc">BILL-2026-003</text>
+        <text x="110" y="22" font-family="-apple-system, sans-serif" font-size="11.5" fill="#f8fafc">Oct 2026</text>
+        <text x="200" y="22" font-family="'Space Grotesk', sans-serif" font-size="12" font-weight="700" fill="#f43f5e">₹5,644.00</text>
+        <rect x="290" y="8" width="58" height="20" rx="10" fill="rgba(244,63,94,0.15)" />
+        <text x="319" y="22" text-anchor="middle" font-family="-apple-system, sans-serif" font-size="9.5" font-weight="700" fill="#f43f5e">UNPAID</text>
+        <text x="375" y="22" font-family="-apple-system, sans-serif" font-size="11" font-weight="600" fill="#38bdf8">📄 Receipt</text>
+      </g>
+      <line x1="24" y1="126" x2="451" y2="126" stroke="rgba(255,255,255,0.05)" />
+
+      <!-- Row 2 -->
+      <g transform="translate(24, 136)">
+        <text x="14" y="22" font-family="-apple-system, sans-serif" font-size="11.5" font-weight="700" fill="#f8fafc">BILL-2026-002</text>
+        <text x="110" y="22" font-family="-apple-system, sans-serif" font-size="11.5" fill="#f8fafc">Sep 2026</text>
+        <text x="200" y="22" font-family="'Space Grotesk', sans-serif" font-size="12" font-weight="700" fill="#10b981">₹5,520.00</text>
+        <rect x="290" y="8" width="58" height="20" rx="10" fill="rgba(16,185,129,0.15)" />
+        <text x="319" y="22" text-anchor="middle" font-family="-apple-system, sans-serif" font-size="9.5" font-weight="700" fill="#10b981">PAID</text>
+        <text x="375" y="22" font-family="-apple-system, sans-serif" font-size="11" font-weight="600" fill="#38bdf8">📄 Receipt</text>
+      </g>
+      <line x1="24" y1="172" x2="451" y2="172" stroke="rgba(255,255,255,0.05)" />
+
+      <!-- Row 3 -->
+      <g transform="translate(24, 182)">
+        <text x="14" y="22" font-family="-apple-system, sans-serif" font-size="11.5" font-weight="700" fill="#f8fafc">BILL-2026-001</text>
+        <text x="110" y="22" font-family="-apple-system, sans-serif" font-size="11.5" fill="#f8fafc">Aug 2026</text>
+        <text x="200" y="22" font-family="'Space Grotesk', sans-serif" font-size="12" font-weight="700" fill="#10b981">₹5,410.00</text>
+        <rect x="290" y="8" width="58" height="20" rx="10" fill="rgba(16,185,129,0.15)" />
+        <text x="319" y="22" text-anchor="middle" font-family="-apple-system, sans-serif" font-size="9.5" font-weight="700" fill="#10b981">PAID</text>
+        <text x="375" y="22" font-family="-apple-system, sans-serif" font-size="11" font-weight="600" fill="#38bdf8">📄 Receipt</text>
+      </g>
+
+      <text x="24" y="238" font-family="-apple-system, sans-serif" font-size="10.5" fill="#64748b">🔒 Tenant data is completely isolated. Only personal records are visible.</text>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,2861 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RentPulse Pro - Single Room Rent & Electricity Management</title>
+  <meta name="description" content="Professional room rent & electricity sub-meter management with WhatsApp integration, meter photo proofs, and Google Sheets cloud sync.">
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- PWA & Mobile Web App Meta -->
+  <meta name="theme-color" content="#0f172a">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="assets/hero-banner.svg">
+
+  <!-- Tesseract.js Client-Side OCR Engine -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-theme="dark">
+  <!-- Accessibility Skip Link -->
+  <a href="#mainContent" class="skip-link">Skip to main content</a>
+
+  <!-- ===================================================================
+       0. SECURE LOGIN GATEWAY SCREEN (Website accessible ONLY after login)
+       =================================================================== -->
+  <div id="loginGateScreen" class="login-gate-screen">
+    <!-- Public Header Navigation Bar -->
+    <nav class="public-top-nav" id="publicTopNav" aria-label="Public Navigation">
+      <div class="public-nav-inner">
+        <div class="brand-block">
+          <div class="logo-box">
+            <i class="fa-solid fa-bolt-lightning"></i>
+          </div>
+          <div>
+            <div class="brand-title-wrap">
+              <span class="brand-title">RentPulse</span>
+              <span class="pro-tag">PRO</span>
+            </div>
+            <span class="brand-subtitle">Smart Tenancy Management</span>
+          </div>
+        </div>
+        <div class="public-nav-actions">
+          <button type="button" class="btn btn-sm btn-ghost active" id="publicNavSignInBtn">
+            <i class="fa-solid fa-arrow-right-to-bracket"></i> <span>Sign In</span>
+          </button>
+          <button type="button" class="btn btn-sm btn-primary" id="publicNavRegisterBtn">
+            <i class="fa-solid fa-user-plus"></i> <span>Tenant Registration</span>
+          </button>
+          <button type="button" class="btn btn-sm btn-outline" id="publicNavCheckStatusBtn">
+            <i class="fa-solid fa-magnifying-glass"></i> <span>Check Status</span>
+          </button>
+          <button type="button" class="theme-btn btn-sm" id="publicThemeToggleBtn" title="Toggle Theme" aria-label="Toggle Theme">
+            <i class="fa-solid fa-moon"></i>
+          </button>
+        </div>
+      </div>
+    </nav>
+
+    <div class="login-gate-backdrop">
+      <div class="login-gate-glow"></div>
+      
+      <div class="login-gate-card">
+        <!-- Logo & Header -->
+        <div class="gate-brand-header">
+          <div class="gate-logo-box">
+            <i class="fa-solid fa-bolt-lightning"></i>
+          </div>
+          <h1 class="gate-title">RentPulse <span class="pro-tag">PRO</span></h1>
+          <p class="gate-subtitle">Single-Room Rent &amp; Electricity Sub-Meter Management</p>
+          <div class="gate-security-badge">
+            <i class="fa-solid fa-shield-halved text-success"></i>
+            <span>Google Sheets Secured &bull; Authentication Required</span>
+          </div>
+        </div>
+
+        <!-- Role Select Tabs -->
+        <div class="gate-role-tabs">
+          <button type="button" class="gate-role-btn active" id="gateRoleAdminBtn" data-role="admin">
+            <i class="fa-solid fa-user-shield text-primary"></i>
+            <span>Administrator</span>
+          </button>
+          <button type="button" class="gate-role-btn" id="gateRoleOwnerBtn" data-role="owner">
+            <i class="fa-solid fa-crown text-warning"></i>
+            <span>Landlord / Owner</span>
+          </button>
+          <button type="button" class="gate-role-btn" id="gateRoleTenantBtn" data-role="tenant">
+            <i class="fa-solid fa-user text-accent"></i>
+            <span>Verified Tenant</span>
+          </button>
+        </div>
+
+        <!-- Security Notice -->
+        <div class="gate-info-box">
+          <i class="fa-solid fa-shield-halved text-success"></i>
+          <span id="gateSecurityNotice">Google Sheets secured authentication. Enter your credentials to sign in.</span>
+        </div>
+
+        <!-- Credential Form -->
+        <form id="gateLoginForm" class="gate-form">
+          <div class="form-group mb-3">
+            <label class="form-label" for="gatePhoneInput">
+              <i class="fa-solid fa-user text-muted"></i> Username, Mobile, or Email
+            </label>
+            <input type="text" id="gatePhoneInput" class="form-control" placeholder="Enter username, mobile, or email" required autocomplete="username">
+          </div>
+
+          <div class="form-group mb-3">
+            <label class="form-label" for="gatePinInput">
+              <i class="fa-solid fa-key text-muted"></i> Password / Security PIN
+            </label>
+            <div style="position: relative; display: flex; align-items: center;">
+              <input type="password" id="gatePinInput" class="form-control" placeholder="Enter password or PIN" maxlength="64" required autocomplete="current-password" style="padding-right: 2.75rem;">
+              <button type="button" id="toggleGatePinBtn" aria-label="Toggle PIN visibility" style="position: absolute; right: 0.75rem; background: transparent; border: none; color: var(--text-muted); cursor: pointer; padding: 0.25rem; font-size: 0.95rem;">
+                <i class="fa-solid fa-eye" id="toggleGatePinIcon"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Remember Me & Forgot Password Link -->
+          <div class="gate-options-row">
+            <label class="gate-remember-label">
+              <input type="checkbox" id="gateRememberMe" aria-label="Remember me on this device" checked>
+              <span>Remember me</span>
+            </label>
+            <a href="javascript:void(0)" id="gateForgotPasswordLink" class="gate-forgot-link">Forgot Password?</a>
+          </div>
+
+          <!-- Error & Network Retry Banner -->
+          <div id="gateErrorBanner" class="gate-error-banner" style="display: none;">
+            <div class="d-flex align-items-center gap-2">
+              <i class="fa-solid fa-triangle-exclamation text-danger"></i>
+              <span id="gateErrorText">Invalid username or password.</span>
+            </div>
+            <button type="button" id="gateRetryBtn" class="btn btn-sm btn-outline gate-retry-btn" style="display: none;">
+              <i class="fa-solid fa-rotate-right"></i> Retry
+            </button>
+          </div>
+
+          <button type="submit" class="btn btn-primary w-100 gate-submit-btn" id="gateSubmitBtn">
+            <i class="fa-solid fa-arrow-right-to-bracket"></i> Sign In to Account
+          </button>
+        </form>
+
+        <!-- New Tenant Registration / Status Tracking Banner -->
+        <div class="gate-registration-prompt">
+          <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <div>
+              <span class="gate-prompt-title"><i class="fa-solid fa-house-chimney-user text-accent"></i> New Tenant Applicant?</span>
+              <p class="gate-prompt-desc">Apply online with photo &amp; ID proof for owner approval.</p>
+            </div>
+            <div class="d-flex gap-2">
+              <button type="button" class="btn btn-sm btn-accent" id="gateOpenRegistrationBtn">
+                <i class="fa-solid fa-user-plus"></i> Register
+              </button>
+              <button type="button" class="btn btn-sm btn-outline" id="gateOpenStatusBtn">
+                <i class="fa-solid fa-magnifying-glass"></i> Check Status
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer Notice -->
+        <div class="gate-footer">
+          <small class="text-dim">
+            <i class="fa-solid fa-lock"></i> SHA-256 Session Token &bull; Strict Tenant Isolation Enforced
+          </small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================
+       MAIN APPLICATION LAYOUT (UNLOCKED ONLY AFTER AUTHENTICATION)
+       =================================================================== -->
+  <div class="app-layout" id="appLayout" style="display: none;">
+    <!-- Top Header Navigation -->
+    <header class="main-header">
+      <div class="header-inner">
+        <div class="brand-block">
+          <div class="logo-box">
+            <i class="fa-solid fa-bolt-lightning"></i>
+          </div>
+          <div>
+            <div class="brand-title-wrap">
+              <h1 class="brand-title">RentPulse</h1>
+              <span class="pro-tag">PRO</span>
+            </div>
+            <span class="brand-subtitle" id="headerOwnerName">Owner: Dilip Sharma</span>
+          </div>
+        </div>
+
+        <!-- Desktop Navigation Tabs (All 4 Core Tabs + Admin/Registrations + Tenant Portal) -->
+        <nav class="nav-tabs" id="mainDesktopNav" role="tablist" aria-label="Primary Navigation">
+          <button class="tab-btn active" data-tab="billing" role="tab" id="tabNavBilling">
+            <i class="fa-solid fa-calculator"></i>
+            <span>Bill Generator</span>
+          </button>
+          <button class="tab-btn" data-tab="records" role="tab" id="tabNavRecords">
+            <i class="fa-solid fa-receipt"></i>
+            <span>Ledger Records (<span id="tabRecordsCount">0</span>)</span>
+          </button>
+          <button class="tab-btn" data-tab="analytics" role="tab" id="tabNavAnalytics">
+            <i class="fa-solid fa-chart-line"></i>
+            <span>Analytics</span>
+          </button>
+          <button class="tab-btn" data-tab="admin" role="tab" id="tabNavAdmin">
+            <i class="fa-solid fa-users-gear"></i>
+            <span>Accounts &amp; Registrations</span>
+            <span class="badge badge-pending-count ms-1" id="navPendingRegBadge" style="display: none;">0</span>
+          </button>
+          <button class="tab-btn" data-tab="tenant-portal" role="tab" id="tabNavTenantPortal" style="display: none;">
+            <i class="fa-solid fa-user"></i>
+            <span>Tenant Portal</span>
+          </button>
+          <button class="tab-btn" data-tab="settings" role="tab" id="tabNavSettings">
+            <i class="fa-solid fa-sliders"></i>
+            <span>Cloud &amp; Settings</span>
+          </button>
+        </nav>
+
+        <div class="header-actions">
+          <!-- Offline / PWA Status Indicator Badge -->
+          <span class="offline-status-badge online" id="offlineStatusBadge" title="Network Connection Status">
+            <i class="fa-solid fa-circle-check"></i> <span id="offlineStatusText">Online</span>
+          </span>
+
+          <!-- Smart Notification Bell Button -->
+          <button type="button" class="notification-bell-btn" id="notificationBellBtn" title="In-App Notifications" aria-label="Open notifications center">
+            <i class="fa-solid fa-bell"></i>
+            <span class="notif-badge-count" id="notificationUnreadBadge" style="display: none;">0</span>
+          </button>
+
+          <!-- Role & Account Indicator Button -->
+          <button class="btn btn-outline btn-sm auth-badge-btn" id="authProfileBtn" title="Switch Account / Role (Owner / Tenant)">
+            <i class="fa-solid fa-user-shield text-warning" id="authRoleIcon"></i>
+            <span id="authRoleLabel">Owner: Dilip Sharma</span>
+          </button>
+
+          <!-- Logout Button -->
+          <button class="btn btn-outline btn-sm logout-btn" id="headerLogoutBtn" title="Lock & Sign Out">
+            <i class="fa-solid fa-arrow-right-from-bracket text-danger"></i>
+            <span>Sign Out</span>
+          </button>
+
+          <!-- Google Sheet Sync Status Indicator -->
+          <button class="cloud-sync-btn" id="headerSyncBtn" title="Sync with Google Sheets">
+            <i class="fa-solid fa-cloud-arrow-up"></i>
+            <span class="sync-status-dot" id="syncDot"></span>
+            <span class="sync-text" id="syncStatusText">Local Only</span>
+          </button>
+          <button class="theme-btn" id="themeToggleBtn" title="Toggle Light/Dark Theme">
+            <i class="fa-solid fa-moon"></i>
+          </button>
+
+          <!-- Mobile Hamburger Menu Button -->
+          <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Open mobile navigation menu" aria-expanded="false">
+            <i class="fa-solid fa-bars"></i>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Mobile Navigation Drawer & Backdrop -->
+    <div class="mobile-nav-backdrop" id="mobileNavBackdrop"></div>
+    <div class="mobile-nav-drawer" id="mobileNavDrawer" aria-hidden="true">
+      <div class="mobile-nav-header">
+        <div class="brand-block">
+          <div class="logo-box"><i class="fa-solid fa-bolt-lightning"></i></div>
+          <div>
+            <div class="brand-title-wrap">
+              <span class="brand-title">RentPulse</span>
+              <span class="pro-tag">PRO</span>
+            </div>
+            <span class="brand-subtitle" id="mobileDrawerRole">Owner: Dilip Sharma</span>
+          </div>
+        </div>
+        <button class="btn-close-drawer" id="closeMobileNavBtn" aria-label="Close navigation menu">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="mobile-nav-body">
+        <div class="mobile-nav-links">
+          <button class="mobile-nav-item active" data-tab="billing" id="mobNavBilling">
+            <i class="fa-solid fa-calculator"></i>
+            <span>Bill Generator</span>
+          </button>
+          <button class="mobile-nav-item" data-tab="records" id="mobNavRecords">
+            <i class="fa-solid fa-receipt"></i>
+            <span>Ledger Records (<span id="mobTabRecordsCount">0</span>)</span>
+          </button>
+          <button class="mobile-nav-item" data-tab="analytics" id="mobNavAnalytics">
+            <i class="fa-solid fa-chart-line"></i>
+            <span>Analytics</span>
+          </button>
+          <button class="mobile-nav-item" data-tab="admin" id="mobNavAdmin">
+            <i class="fa-solid fa-users-gear"></i>
+            <span>Accounts &amp; Registrations</span>
+            <span class="badge badge-pending-count ms-auto" id="mobPendingRegBadge" style="display: none;">0</span>
+          </button>
+          <button class="mobile-nav-item" data-tab="tenant-portal" id="mobNavTenantPortal" style="display: none;">
+            <i class="fa-solid fa-user"></i>
+            <span>Tenant Portal</span>
+          </button>
+          <button class="mobile-nav-item" data-tab="settings" id="mobNavSettings">
+            <i class="fa-solid fa-sliders"></i>
+            <span>Cloud &amp; Settings</span>
+          </button>
+        </div>
+        <div class="mobile-nav-footer">
+          <button class="btn btn-outline w-100 mb-2" id="mobSyncBtn">
+            <i class="fa-solid fa-cloud-arrow-up"></i> Sync with Sheets
+          </button>
+          <button class="btn btn-outline btn-danger-soft w-100" id="mobLogoutBtn">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i> Sign Out
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide-Out Smart Notification Center Drawer -->
+    <div class="notification-drawer-backdrop" id="notificationBackdrop"></div>
+    <div class="notification-drawer" id="notificationDrawer" aria-hidden="true" role="dialog" aria-labelledby="notifDrawerHeading">
+      <div class="notif-drawer-header">
+        <h3 id="notifDrawerHeading"><i class="fa-solid fa-bell text-warning"></i> Notifications</h3>
+        <div class="notif-drawer-actions">
+          <button type="button" class="btn btn-xs btn-outline" id="markAllNotifsReadBtn" title="Mark all notifications as read">
+            <i class="fa-solid fa-check-double"></i> Mark all read
+          </button>
+          <button type="button" class="btn-close-drawer" id="closeNotifDrawerBtn" aria-label="Close notifications">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      </div>
+      <div class="notif-drawer-body" id="notifDrawerList">
+        <div class="notif-empty-state">
+          <i class="fa-regular fa-bell-slash"></i>
+          <p>No notifications yet</p>
+          <small class="text-muted">You're all caught up!</small>
+        </div>
+      </div>
+    </div>
+
+    <main class="main-container" id="mainContent">
+      <!-- 1. Room & Current Tenant Status Card (Pinned at Top) -->
+      <section class="room-status-hero">
+        <div class="room-hero-card">
+          <div class="hero-left">
+            <div class="room-icon-tag">
+              <i class="fa-solid fa-house-chimney-user"></i>
+            </div>
+            <div class="room-info-text">
+              <div class="room-title-line">
+                <h2 id="heroRoomTitle">Room 1</h2>
+                <span class="status-pill status-occupied" id="heroOccupancyBadge">Occupied</span>
+              </div>
+              <p class="room-subtitle-line" id="heroRoomMeta">Single Room / Ground Floor • Standard Rent: ₹5,000/mo</p>
+            </div>
+          </div>
+
+          <div class="hero-center" id="heroTenantBox">
+            <div class="tenant-tag">CURRENT OCCUPANT</div>
+            <div class="tenant-name" id="heroTenantName">Rahul Verma</div>
+            <div class="tenant-contact">
+              <span id="heroTenantPhone"><i class="fa-brands fa-whatsapp text-success"></i> +91 98112 34567</span> • 
+              <span id="heroTenantMoveIn"><i class="fa-solid fa-calendar-check"></i> Moved in Jan 2026</span>
+            </div>
+          </div>
+
+          <div class="hero-right">
+            <div class="meter-quick-display">
+              <span class="meter-label"><i class="fa-solid fa-bolt text-warning"></i> Last Recorded Reading</span>
+              <span class="meter-val" id="heroCurrentMeter">1,265.0 kWh</span>
+              <small class="meter-sub" id="heroMeterSerial">Sub-meter: MTR-101</small>
+            </div>
+            <div class="hero-actions">
+              <button class="btn btn-outline btn-sm" id="editTenantBtn">
+                <i class="fa-solid fa-user-pen"></i> Edit Tenant
+              </button>
+              <button class="btn btn-secondary btn-sm text-danger" id="vacateTenantBtn" title="Mark room as vacant">
+                <i class="fa-solid fa-arrow-right-from-bracket"></i> Vacate
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. TAB CONTENT: BILLING & ELECTRICITY CALCULATOR -->
+      <section id="tab-billing" class="tab-content active">
+        <!-- KPI Row -->
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-icon green"><i class="fa-solid fa-wallet"></i></div>
+            <div class="kpi-data">
+              <span class="kpi-title">Total Collected</span>
+              <h3 class="kpi-num" id="kpiTotalCollected">₹0</h3>
+              <span class="kpi-sub text-success">All payments received</span>
+            </div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-icon red"><i class="fa-solid fa-clock-rotate-left"></i></div>
+            <div class="kpi-data">
+              <span class="kpi-title">Pending Due</span>
+              <h3 class="kpi-num" id="kpiPendingDue">₹0</h3>
+              <span class="kpi-sub text-danger" id="kpiPendingCount">0 unpaid bills</span>
+            </div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-icon amber"><i class="fa-solid fa-bolt"></i></div>
+            <div class="kpi-data">
+              <span class="kpi-title">Power Consumed</span>
+              <h3 class="kpi-num" id="kpiTotalUnits">0 kWh</h3>
+              <span class="kpi-sub" id="kpiPowerCost">₹0 generated</span>
+            </div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-icon blue"><i class="fa-solid fa-file-invoice"></i></div>
+            <div class="kpi-data">
+              <span class="kpi-title">Total Invoices</span>
+              <h3 class="kpi-num" id="kpiTotalBillsCount">0</h3>
+              <span class="kpi-sub" id="kpiLastBillDate">No bills yet</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Calculator Split Layout -->
+        <div class="billing-grid">
+          <!-- Left: Bill Generation Form -->
+          <div class="panel-card">
+            <div class="panel-header">
+              <div>
+                <h3 class="panel-title"><i class="fa-solid fa-bolt text-accent"></i> New Monthly Rent & Electricity Bill</h3>
+                <p class="panel-subtitle">Enter current sub-meter reading, snap meter photo proof, and calculate total.</p>
+              </div>
+            </div>
+
+            <div class="panel-body">
+              <form id="singleBillForm">
+                <div class="form-row">
+                  <div class="form-group col-6">
+                    <label for="billMonth">Billing Month & Year *</label>
+                    <input type="month" id="billMonth" class="form-control" required>
+                  </div>
+                  <div class="form-group col-6">
+                    <label for="billDueDate">Due Date</label>
+                    <input type="date" id="billDueDate" class="form-control">
+                  </div>
+                </div>
+
+                <!-- Electricity Sub-Meter Section -->
+                <div class="section-badge">
+                  <i class="fa-solid fa-bolt"></i> Electricity Sub-Meter Readings
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group col-4">
+                    <label for="billPrevReading">Previous Reading (kWh) *</label>
+                    <input type="number" step="0.1" id="billPrevReading" class="form-control" placeholder="0.0" required>
+                    <small class="helper-text">Last recorded meter unit</small>
+                  </div>
+                  <div class="form-group col-4">
+                    <label for="billCurrReading">Current Reading (kWh) *</label>
+                    <input type="number" step="0.1" id="billCurrReading" class="form-control" placeholder="0.0" required>
+                    <small class="helper-text">Present sub-meter reading</small>
+                  </div>
+                  <div class="form-group col-4">
+                    <label for="billRatePerUnit">Rate / Unit (<span class="currency-label">₹</span>) *</label>
+                    <input type="number" step="0.1" id="billRatePerUnit" class="form-control" value="8.0" required>
+                    <small class="helper-text">Cost per unit</small>
+                  </div>
+                </div>
+
+                <!-- Live Electricity Math Display Box -->
+                <div class="calc-strip">
+                  <div class="calc-part">
+                    <span>Units Consumed</span>
+                    <strong id="liveUnitsText">0.0 kWh</strong>
+                  </div>
+                  <div class="calc-math-sym">×</div>
+                  <div class="calc-part">
+                    <span>Rate</span>
+                    <strong id="liveRateText">₹8.00</strong>
+                  </div>
+                  <div class="calc-math-sym">=</div>
+                  <div class="calc-part highlight">
+                    <span>Electricity Bill</span>
+                    <strong id="liveElecCostText">₹0.00</strong>
+                  </div>
+                </div>
+
+                <!-- Consumption Anomaly Detector Alert Card (>50% spike) -->
+                <div class="anomaly-alert-card" id="consumptionAnomalyAlert" style="display: none;">
+                  <i class="fa-solid fa-triangle-exclamation alert-icon"></i>
+                  <div class="w-100">
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-1">
+                      <span class="alert-title">⚡ Unusual Electricity Spike Detected (&gt;50% Increase)</span>
+                      <span class="badge bg-danger text-white" id="anomalyPercentBadge">+0%</span>
+                    </div>
+                    <p class="alert-desc mb-2" id="anomalyDescText">Current consumption significantly exceeds normal monthly historical baseline. Please double-check the meter reading dial.</p>
+                    <div class="anomaly-stats-chips">
+                      <span class="anomaly-chip"><i class="fa-solid fa-chart-simple text-accent"></i> Baseline: <strong id="anomalyBaselineText">80 kWh</strong></span>
+                      <span class="anomaly-chip"><i class="fa-solid fa-bolt text-warning"></i> Current: <strong id="anomalyCurrentText">0 kWh</strong></span>
+                      <span class="anomaly-chip"><i class="fa-solid fa-arrow-trend-up text-danger"></i> Spike: <strong id="anomalySpikeText">+0%</strong></span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- NEW: Meter Reading Photo Upload Box with Client-Side OCR -->
+                <div class="photo-upload-box">
+                  <div class="photo-box-header">
+                    <div>
+                      <span class="photo-label"><i class="fa-solid fa-camera"></i> Sub-Meter Photo Proof &amp; Auto-OCR</span>
+                      <p class="photo-sub">Upload or snap photo of the physical meter dial for automatic digit detection and tenant transparency.</p>
+                    </div>
+                    <button type="button" class="btn btn-secondary btn-sm" id="clearPhotoBtn" style="display: none;">
+                      <i class="fa-solid fa-xmark"></i> Remove
+                    </button>
+                  </div>
+
+                  <div class="upload-dropzone" id="uploadDropzone">
+                    <input type="file" id="billMeterPhotoInput" aria-label="Upload physical sub-meter photo" accept="image/*" capture="environment" style="display: none;">
+                    <div class="dropzone-prompt" id="dropzonePrompt">
+                      <div class="camera-icon-wrap"><i class="fa-solid fa-camera-retro"></i></div>
+                      <span class="upload-title">Click to snap or choose Meter Photo</span>
+                      <span class="upload-desc">Auto-extracts digits using client-side OCR (JPG, PNG, WebP)</span>
+                    </div>
+                    <div class="photo-preview-wrapper" id="photoPreviewWrapper" style="display: none;">
+                      <img id="meterPhotoPreview" alt="Meter dial preview" src="">
+                      <span class="photo-badge"><i class="fa-solid fa-check"></i> Photo Attached</span>
+                    </div>
+                  </div>
+
+                  <!-- Client-Side OCR Scanning Status Banner -->
+                  <div class="ocr-scan-banner" id="ocrScanBanner" style="display: none;">
+                    <div class="d-flex align-items-center gap-2">
+                      <i class="fa-solid fa-wand-magic-sparkles text-primary"></i>
+                      <div>
+                        <strong>OCR Auto-Detection:</strong>
+                        <span id="ocrStatusMsg">Analyzing meter photo dial...</span>
+                      </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-2" id="ocrResultWrap" style="display: none;">
+                      <span class="ocr-result-badge high" id="ocrConfidenceBadge">92% Confidence</span>
+                      <button type="button" class="btn btn-xs btn-outline" id="ocrApplyBtn" title="Apply detected reading to form">
+                        <i class="fa-solid fa-check"></i> Use <span id="ocrDetectedDigits">1265.0</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Base Rent & Additional Charges -->
+                <div class="section-badge">
+                  <i class="fa-solid fa-house-chimney"></i> Room Rent & Additional Charges
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group col-4">
+                    <label for="billRoomRent">Base Room Rent (<span class="currency-label">₹</span>) *</label>
+                    <input type="number" step="1" id="billRoomRent" class="form-control" value="5000" required>
+                  </div>
+                  <div class="form-group col-4">
+                    <label for="billWaterCharge">Water / Maintenance (<span class="currency-label">₹</span>)</label>
+                    <input type="number" step="1" id="billWaterCharge" class="form-control" value="0">
+                  </div>
+                  <div class="form-group col-4">
+                    <label for="billOtherCharge">Waste / Other (<span class="currency-label">₹</span>)</label>
+                    <input type="number" step="1" id="billOtherCharge" class="form-control" value="0">
+                  </div>
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group col-6">
+                    <label for="billStatus">Payment Status</label>
+                    <select id="billStatus" class="form-select">
+                      <option value="Unpaid">Unpaid / Due</option>
+                      <option value="Paid">Paid Fully</option>
+                      <option value="Partial">Partially Paid</option>
+                    </select>
+                  </div>
+                  <div class="form-group col-6" id="paymentModeGroup" style="display: none;">
+                    <label for="billPaymentMode">Payment Mode</label>
+                    <select id="billPaymentMode" class="form-select">
+                      <option value="UPI / Online">UPI / Online Transfer</option>
+                      <option value="Cash">Cash</option>
+                      <option value="Bank Transfer">Bank Transfer / IMPS</option>
+                      <option value="Cheque">Cheque</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="form-group" id="partialAmountGroup" style="display: none;">
+                  <label for="billPaidAmount">Amount Paid Now (<span class="currency-label">₹</span>)</label>
+                  <input type="number" step="1" id="billPaidAmount" class="form-control" value="0">
+                </div>
+
+                <div class="form-group">
+                  <label for="billNotes">Notes / Description (Optional)</label>
+                  <input type="text" id="billNotes" class="form-control" placeholder="e.g. AC usage included, paid via PhonePe">
+                </div>
+
+                <div class="form-submit-row">
+                  <button type="reset" class="btn btn-secondary" id="resetBillBtn">Reset</button>
+                  <button type="submit" class="btn btn-primary" id="saveBillBtn">
+                    <i class="fa-solid fa-floppy-disk"></i> Generate & Save Bill
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <!-- Right: Live Bill Receipt Preview with Dynamic UPI QR -->
+          <div class="panel-card preview-sidebar-card">
+            <div class="panel-header">
+              <h3 class="panel-title"><i class="fa-solid fa-receipt"></i> Live Statement & UPI Preview</h3>
+              <span class="preview-badge badge-unpaid" id="prevBadge">Unpaid</span>
+            </div>
+
+            <div class="panel-body">
+              <div class="preview-receipt">
+                <div class="prev-head">
+                  <strong id="prevOwnerName">Dilip Sharma (Owner)</strong>
+                  <span id="prevPropName">Room 1 Rent & Utility Bill</span>
+                </div>
+                <div class="prev-tenant-info">
+                  <div>Tenant: <strong id="prevTenantName">Rahul Verma</strong></div>
+                  <div>Period: <strong id="prevMonthYear">Current Month</strong></div>
+                </div>
+
+                <div class="prev-meter-box">
+                  <div class="prev-meter-line">
+                    <span>Meter Reading:</span>
+                    <strong id="prevMeterLine">1200.0 &rarr; 1265.0 kWh</strong>
+                  </div>
+                  <div class="prev-meter-line highlight-energy">
+                    <span>Units Consumed:</span>
+                    <strong id="prevUnitsConsumed">65.0 kWh</strong>
+                  </div>
+                </div>
+
+                <!-- Attached photo thumbnail preview if any -->
+                <div class="prev-photo-thumb" id="prevPhotoThumbRow" style="display: none;">
+                  <i class="fa-solid fa-camera text-accent"></i>
+                  <span>Meter Dial Photo Attached</span>
+                </div>
+
+                <div class="prev-line-items">
+                  <div class="item-row">
+                    <span>Base Room Rent:</span>
+                    <strong id="prevRentAmt">₹5,000.00</strong>
+                  </div>
+                  <div class="item-row">
+                    <span>Electricity Bill (<span id="prevElecUnits">65.0</span>u @ <span id="prevElecRate">₹8</span>):</span>
+                    <strong id="prevElecAmt">₹520.00</strong>
+                  </div>
+                  <div class="item-row" id="prevWaterRow">
+                    <span>Water / Maintenance:</span>
+                    <strong id="prevWaterAmt">₹0.00</strong>
+                  </div>
+                  <div class="item-row" id="prevOtherRow">
+                    <span>Other Charges:</span>
+                    <strong id="prevOtherAmt">₹0.00</strong>
+                  </div>
+                </div>
+
+                <div class="prev-total-box">
+                  <span>Grand Total:</span>
+                  <strong class="total-number" id="prevGrandTotal">₹5,520.00</strong>
+                </div>
+
+                <!-- Dynamic Real-time UPI QR Code for instant payment -->
+                <div class="upi-qr-card">
+                  <div class="qr-image-wrapper">
+                    <img id="prevUpiQrImg" alt="UPI Payment QR Code" src="">
+                  </div>
+                  <div class="qr-details">
+                    <span class="qr-label"><i class="fa-solid fa-qrcode"></i> Scan to Pay Bill</span>
+                    <span class="qr-upi-id" id="prevUpiId">dilip.sharma@upi</span>
+                    <small class="qr-help">Supports GPay, PhonePe, Paytm, BHIM</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. TAB CONTENT: BILLING RECORDS & LEDGER -->
+      <section id="tab-records" class="tab-content">
+        <div class="records-toolbar">
+          <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="recordSearch" aria-label="Search billing records" placeholder="Search bill #, month, or notes...">
+          </div>
+
+          <div class="filter-controls">
+            <select id="recordStatusFilter" class="form-select">
+              <option value="all">All Statuses</option>
+              <option value="Paid">Paid</option>
+              <option value="Unpaid">Unpaid / Due</option>
+              <option value="Partial">Partial</option>
+            </select>
+
+            <button class="btn btn-outline btn-sm" id="syncSheetNowBtn" title="Push records to Google Sheet">
+              <i class="fa-solid fa-cloud-arrow-up text-success"></i> Sync to Sheet
+            </button>
+            <button class="btn btn-outline btn-sm" id="exportCsvBtn">
+              <i class="fa-solid fa-file-excel"></i> Export CSV
+            </button>
+          </div>
+        </div>
+
+        <div class="panel-card">
+          <div class="panel-body no-padding">
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Bill #</th>
+                    <th>Month</th>
+                    <th>Meter (Prev &rarr; Curr)</th>
+                    <th>Units</th>
+                    <th>Electricity (₹)</th>
+                    <th>Rent (₹)</th>
+                    <th>Total (₹)</th>
+                    <th>Paid</th>
+                    <th>Status</th>
+                    <th>Proof</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="recordsTableBody">
+                  <!-- Injected via JS -->
+                </tbody>
+              </table>
+            </div>
+
+            <div class="empty-state" id="emptyRecordsState" style="display: none;">
+              <i class="fa-solid fa-receipt fa-2x text-muted mb-2"></i>
+              <h4>No Records Found</h4>
+              <p>Generate a bill from the "Bill Generator" tab to create your first record.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dedicated Security Deposit Ledger Card -->
+        <div class="panel-card mt-4" id="securityDepositPanel">
+          <div class="panel-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div>
+              <h3 class="panel-title"><i class="fa-solid fa-vault text-warning"></i> Security Deposit Ledger &amp; Escrow</h3>
+              <p class="panel-subtitle">Dedicated deposit holding ledger separate from monthly rental revenue.</p>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <button type="button" class="btn btn-sm btn-outline" id="openMoveOutSettlementBtn">
+                <i class="fa-solid fa-calculator"></i> Move-Out Settlement
+              </button>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="deposit-summary-strip">
+              <div class="deposit-stat-card">
+                <span class="stat-label">Original Deposit</span>
+                <div class="stat-val text-primary" id="depStatOriginal">₹10,000</div>
+              </div>
+              <div class="deposit-stat-card">
+                <span class="stat-label">Approved Deductions</span>
+                <div class="stat-val text-danger" id="depStatDeductions">₹0</div>
+              </div>
+              <div class="deposit-stat-card">
+                <span class="stat-label">Refunds Paid</span>
+                <div class="stat-val text-warning" id="depStatRefunds">₹0</div>
+              </div>
+              <div class="deposit-stat-card">
+                <span class="stat-label">Escrow Balance</span>
+                <div class="stat-val text-success" id="depStatBalance">₹10,000</div>
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Deposit ID</th>
+                    <th>Tenant</th>
+                    <th>Original (₹)</th>
+                    <th>Payment Date</th>
+                    <th>Deductions</th>
+                    <th>Refunded</th>
+                    <th>Balance</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="depositTableBody">
+                  <!-- Injected via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. TAB CONTENT: CONSUMPTION & TRENDS -->
+      <section id="tab-analytics" class="tab-content">
+        <div class="analytics-layout">
+          <div class="panel-card">
+            <div class="panel-header">
+              <h3 class="panel-title"><i class="fa-solid fa-bolt text-warning"></i> Monthly Electricity Consumption (kWh)</h3>
+              <p class="panel-subtitle">Tracks power consumption history to spot high-usage months</p>
+            </div>
+            <div class="panel-body">
+              <div class="chart-container">
+                <canvas id="energyChart" height="260"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel-card">
+            <div class="panel-header">
+              <h3 class="panel-title"><i class="fa-solid fa-wallet text-success"></i> Rent & Electricity Collections Trend</h3>
+              <p class="panel-subtitle">Monthly revenue generated by this room</p>
+            </div>
+            <div class="panel-body">
+              <div class="chart-container">
+                <canvas id="revenueChart" height="260"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 5. TAB CONTENT: CLOUD GOOGLE SHEET & SETTINGS -->
+      <section id="tab-settings" class="tab-content">
+        <div class="settings-layout">
+          <!-- Left: Owner & Room Config -->
+          <div class="panel-card">
+            <div class="panel-header">
+              <h3 class="panel-title"><i class="fa-solid fa-sliders"></i> Property & Owner Configuration</h3>
+              <p class="panel-subtitle">Details for invoices, UPI QR code, and WhatsApp notices</p>
+            </div>
+            <div class="panel-body">
+              <form id="settingsForm">
+                <div class="form-row">
+                  <div class="form-group col-6">
+                    <label for="setOwnerName">Owner / Landlord Full Name *</label>
+                    <input type="text" id="setOwnerName" class="form-control" value="Dilip Sharma" required>
+                  </div>
+                  <div class="form-group col-6">
+                    <label for="setOwnerPhone">Owner Phone / WhatsApp *</label>
+                    <input type="text" id="setOwnerPhone" class="form-control" value="+91 98765 43210" required>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="setPropAddress">Room / Property Address</label>
+                  <textarea id="setPropAddress" class="form-control" rows="2">House No. 42, Sunrise Lane, 1st Cross, Bengaluru - 560001</textarea>
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group col-6">
+                    <label for="setRoomTitle">Room Display Name *</label>
+                    <input type="text" id="setRoomTitle" class="form-control" value="Room 1 (Ground Floor)" required>
+                  </div>
+                  <div class="form-group col-6">
+                    <label for="setBaseRent">Standard Monthly Rent (<span class="currency-label">₹</span>) *</label>
+                    <input type="number" id="setBaseRent" class="form-control" value="5000" required>
+                  </div>
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group col-4">
+                    <label for="setDefaultElecRate">Electricity Rate / Unit (<span class="currency-label">₹</span>) *</label>
+                    <input type="number" step="0.1" id="setDefaultElecRate" class="form-control" value="8.0" required>
+                  </div>
+                  <div class="form-group col-4">
+                    <label for="setMeterId">Meter Serial Number</label>
+                    <input type="text" id="setMeterId" class="form-control" value="MTR-101">
+                  </div>
+                  <div class="form-group col-4">
+                    <label for="setCurrency">Currency Symbol</label>
+                    <select id="setCurrency" class="form-select">
+                      <option value="₹">₹ (INR)</option>
+                      <option value="$">$ (USD)</option>
+                      <option value="€">€ (EUR)</option>
+                      <option value="£">£ (GBP)</option>
+                      <option value="AED">AED</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="setUpiId">UPI ID for Direct QR & WhatsApp Link *</label>
+                  <input type="text" id="setUpiId" class="form-control" value="dilip.sharma@okhdfcbank" placeholder="name@okhdfcbank">
+                  <small class="helper-text">Tenant scans this QR or clicks the UPI link in WhatsApp to pay instantly!</small>
+                </div>
+
+                <!-- Due Date Policy & Grace Period -->
+                <div class="form-row">
+                  <div class="form-group col-6">
+                    <label for="setGracePeriodDays">Billing Grace Period (Days)</label>
+                    <input type="number" id="setGracePeriodDays" class="form-control" value="5" min="0" max="30">
+                    <small class="helper-text">Days after due date before late fee triggers</small>
+                  </div>
+                  <div class="form-group col-6">
+                    <label for="setLateFeeAmount">Late Fee (<span class="currency-label">₹</span>)</label>
+                    <input type="number" id="setLateFeeAmount" class="form-control" value="100" min="0">
+                    <small class="helper-text">Applied automatically once grace period expires</small>
+                  </div>
+                </div>
+
+                <div class="form-submit-row">
+                  <button type="submit" class="btn btn-primary">
+                    <i class="fa-solid fa-check"></i> Save Settings
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <!-- Right: Google Sheets Cloud Database Integration -->
+          <div class="panel-card" id="settingsGsheetCard">
+            <div class="panel-header">
+              <h3 class="panel-title"><i class="fa-solid fa-table-cells text-success"></i> Google Sheets Cloud Integration</h3>
+              <span class="badge" id="settingsGsheetBadge" style="background: rgba(16, 185, 129, 0.2); color: #10b981;">Cloud Sync</span>
+            </div>
+            <div class="panel-body">
+              <p class="text-muted" style="font-size: 0.84rem; margin-bottom: 0.85rem;">
+                Connect a Google Apps Script Web App endpoint to automatically synchronize room bills, meter readings, receipts, and payments in real time.
+              </p>
+
+              <!-- Connection Status & Last Sync Time Banner -->
+              <div id="settingsSyncMetaBox" style="background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 0.65rem 0.85rem; margin-bottom: 1rem; font-size: 0.82rem; display: flex; flex-direction: column; gap: 0.35rem;">
+                <div class="d-flex align-items-center justify-content-between">
+                  <span class="text-muted"><i class="fa-solid fa-signal text-accent"></i> Connection Status:</span>
+                  <strong id="settingsConnStatusText" class="text-success">Configured &amp; Ready</strong>
+                </div>
+                <div class="d-flex align-items-center justify-content-between">
+                  <span class="text-muted"><i class="fa-solid fa-clock-rotate-left text-warning"></i> Last Synchronized:</span>
+                  <span id="settingsLastSyncTime" class="text-muted">Not yet synchronized</span>
+                </div>
+              </div>
+
+              <form id="googleSheetConfigForm">
+                <div class="form-group">
+                  <label for="gsheetWebAppUrl">Google Apps Script Web App URL *</label>
+                  <input type="url" id="gsheetWebAppUrl" class="form-control" placeholder="https://script.google.com/macros/s/AKfycb.../exec" required autocomplete="off">
+                  <small class="helper-text">Authorized administrators and owners can configure this webhook endpoint for multi-tenant synchronization.</small>
+                </div>
+
+                <div class="form-row mt-3" style="flex-wrap: wrap; gap: 0.5rem;">
+                  <button type="submit" class="btn btn-primary btn-sm" id="saveGsheetUrlBtn">
+                    <i class="fa-solid fa-floppy-disk"></i> Save Webhook URL
+                  </button>
+                  <button type="button" class="btn btn-outline btn-sm" id="testGsheetConnectionBtn">
+                    <i class="fa-solid fa-network-wired"></i> Test Connection
+                  </button>
+                  <button type="button" class="btn btn-outline btn-sm" id="testGsheetSyncBtn">
+                    <i class="fa-solid fa-cloud-arrow-up"></i> Sync Ledger Now
+                  </button>
+                  <button type="button" class="btn btn-secondary btn-sm" id="viewGsheetScriptBtn">
+                    <i class="fa-solid fa-code"></i> View Setup Guide
+                  </button>
+                  <a href="https://sheets.new" target="_blank" class="btn btn-outline btn-sm" title="Create a new Google Sheet">
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i> Open sheets.new
+                  </a>
+                </div>
+                <div id="settingsGsheetStatus" class="mt-2" style="display: none; font-size: 0.8rem;"></div>
+              </form>
+
+              <hr class="divider mt-4">
+
+              <!-- Backup & Data Controls -->
+              <div class="backup-action-item">
+                <div>
+                  <strong>Export Complete JSON Backup</strong>
+                  <p class="text-muted" style="font-size: 0.8rem;">Save all historical bills and photos to a local JSON file.</p>
+                </div>
+                <button class="btn btn-outline btn-sm" id="exportBackupBtn">
+                  <i class="fa-solid fa-download"></i> Export JSON
+                </button>
+              </div>
+
+              <div class="backup-action-item mt-2">
+                <div>
+                  <strong>Restore Backup File</strong>
+                  <p class="text-muted" style="font-size: 0.8rem;">Upload a previously saved RentPulse backup file.</p>
+                </div>
+                <label class="btn btn-secondary btn-sm">
+                  <i class="fa-solid fa-upload"></i> Restore
+                  <input type="file" id="importBackupInput" aria-label="Restore JSON backup file" accept=".json" style="display: none;">
+                </label>
+              </div>
+
+              <div class="backup-action-item mt-2">
+                <div>
+                  <strong class="text-danger">Reset All Records</strong>
+                  <p class="text-muted" style="font-size: 0.8rem;">Clears all bills and resets to clean state.</p>
+                </div>
+                <button class="btn btn-danger btn-sm" id="resetAllBtn">
+                  <i class="fa-solid fa-trash-can"></i> Reset
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Notification Preferences Manager Panel -->
+          <div class="panel-card" id="notificationPreferencesPanel">
+            <div class="panel-header">
+              <h3 class="panel-title"><i class="fa-solid fa-bell-concierge text-primary"></i> Notification Preferences</h3>
+              <span class="badge" style="background: rgba(99, 102, 241, 0.15); color: var(--brand-violet);">Multi-Channel</span>
+            </div>
+            <div class="panel-body">
+              <p class="text-muted" style="font-size: 0.84rem; margin-bottom: 0.85rem;">
+                Configure alerts for registration applications, monthly billing notices, verified payment receipts, and unusual meter spikes.
+              </p>
+              <form id="notificationPreferencesForm">
+                <div class="form-check form-switch mb-3">
+                  <input class="form-check-input" type="checkbox" id="prefInAppCheck" checked>
+                  <label class="form-check-label" for="prefInAppCheck">
+                    <strong>In-App Notification Drawer</strong>
+                    <div class="text-muted" style="font-size: 0.78rem;">Display badge counters and slide-out alert drawer cards.</div>
+                  </label>
+                </div>
+                <div class="form-check form-switch mb-3">
+                  <input class="form-check-input" type="checkbox" id="prefEmailCheck" checked>
+                  <label class="form-check-label" for="prefEmailCheck">
+                    <strong>Google Apps Script Email Alerts</strong>
+                    <div class="text-muted" style="font-size: 0.78rem;">Automatic email delivery of PDF invoices, login credentials, and payment receipts.</div>
+                  </label>
+                </div>
+                <div class="form-check form-switch mb-3">
+                  <input class="form-check-input" type="checkbox" id="prefPushCheck">
+                  <label class="form-check-label" for="prefPushCheck">
+                    <strong>Browser Web Push Notifications</strong>
+                    <div class="text-muted" style="font-size: 0.78rem;">Receive push notifications on desktop/mobile even when the browser tab is closed.</div>
+                  </label>
+                </div>
+                <div class="form-check form-switch mb-3">
+                  <input class="form-check-input" type="checkbox" id="prefWhatsAppCheck" checked>
+                  <label class="form-check-label" for="prefWhatsAppCheck">
+                    <strong>1-Click WhatsApp Reminders</strong>
+                    <div class="text-muted" style="font-size: 0.78rem;">Enable prefilled WhatsApp invoice messages with direct UPI payment links.</div>
+                  </label>
+                </div>
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                  <button type="submit" class="btn btn-primary btn-sm" id="saveNotifPrefsBtn">
+                    <i class="fa-solid fa-floppy-disk"></i> Save Preferences
+                  </button>
+                  <button type="button" class="btn btn-outline btn-sm" id="enablePushBtn">
+                    <i class="fa-solid fa-bell"></i> Enable Web Push
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </section>
+ 
+      <!-- 6. TAB CONTENT: ADMIN & OWNER DASHBOARD (Tenant Registrations & Accounts) -->
+      <section id="tab-admin" class="tab-content">
+        <div class="tenant-portal-hero mb-4">
+          <div class="tenant-hero-left">
+            <div class="portal-badge"><i class="fa-solid fa-user-shield text-primary"></i> PROPERTY MANAGEMENT &amp; ACCESS CONTROL</div>
+            <h2>Tenant Registrations &amp; Account Operations</h2>
+            <p class="text-muted"><i class="fa-solid fa-server text-accent"></i> Authorized Review Scope &bull; Review registration applications, inspect ID proofs, approve tenancies, and manage account credentials.</p>
+            <div class="tp-tenancy-chips">
+              <span class="status-pill status-occupied" id="adminRoleBadge"><i class="fa-solid fa-crown text-warning"></i> Authorized Reviewer</span>
+              <span class="chip-submeter"><i class="fa-solid fa-database text-accent"></i> Source: <strong>Google Sheets</strong></span>
+              <span class="chip-deposit"><i class="fa-solid fa-lock text-success"></i> RBAC: <strong>Role Protected</strong></span>
+            </div>
+          </div>
+          <div class="tenant-hero-right d-flex flex-column gap-2" style="justify-content: center;">
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+              <button type="button" class="btn btn-primary" id="openAddTenantModalBtn">
+                <i class="fa-solid fa-user-plus"></i> Add Tenant
+              </button>
+              <button type="button" class="btn btn-warning" id="openAddOwnerModalBtn">
+                <i class="fa-solid fa-crown"></i> Add Owner
+              </button>
+            </div>
+            <button type="button" class="btn btn-outline btn-sm" id="adminSyncBtn" title="Synchronize tenant accounts to Google Sheets">
+              <i class="fa-solid fa-cloud-arrow-up"></i> Sync Cloud Webhook
+            </button>
+          </div>
+        </div>
+
+        <!-- Admin KPI Metric Summary Cards (5 Cards) -->
+        <div class="kpi-grid mb-4" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+          <div class="kpi-card card-highlight-amber" id="adminPendingAppsCard">
+            <div class="kpi-header">
+              <span class="kpi-title">Pending Applications</span>
+              <div class="kpi-icon-box bg-amber-soft"><i class="fa-solid fa-clock text-warning"></i></div>
+            </div>
+            <div class="kpi-body">
+              <div class="kpi-value text-warning" id="adminPendingRegistrationsCount">0</div>
+              <span class="kpi-subtext">Awaiting owner / admin review</span>
+            </div>
+          </div>
+
+          <div class="kpi-card card-highlight-purple">
+            <div class="kpi-header">
+              <span class="kpi-title">Total Tenants</span>
+              <div class="kpi-icon-box bg-purple-soft"><i class="fa-solid fa-users text-primary"></i></div>
+            </div>
+            <div class="kpi-body">
+              <div class="kpi-value" id="adminTotalTenants">0</div>
+              <span class="kpi-subtext">Registered in authoritative store</span>
+            </div>
+          </div>
+
+          <div class="kpi-card card-highlight-green">
+            <div class="kpi-header">
+              <span class="kpi-title">Active Accounts</span>
+              <div class="kpi-icon-box bg-green-soft"><i class="fa-solid fa-user-check text-success"></i></div>
+            </div>
+            <div class="kpi-body">
+              <div class="kpi-value text-success" id="adminActiveTenants">0</div>
+              <span class="kpi-subtext">Permitted to sign in</span>
+            </div>
+          </div>
+
+          <div class="kpi-card card-highlight-red">
+            <div class="kpi-header">
+              <span class="kpi-title">Deactivated Accounts</span>
+              <div class="kpi-icon-box bg-red-soft"><i class="fa-solid fa-user-xmark text-danger"></i></div>
+            </div>
+            <div class="kpi-body">
+              <div class="kpi-value text-danger" id="adminInactiveTenants">0</div>
+              <span class="kpi-subtext">Access locked / suspended</span>
+            </div>
+          </div>
+
+          <div class="kpi-card card-highlight-blue">
+            <div class="kpi-header">
+              <span class="kpi-title">Cloud Sync Status</span>
+              <div class="kpi-icon-box bg-blue-soft"><i class="fa-solid fa-cloud text-accent"></i></div>
+            </div>
+            <div class="kpi-body">
+              <div class="kpi-value" id="adminSyncStatus" style="font-size: 1.1rem;">Connected</div>
+              <span class="kpi-subtext" id="adminSyncMeta">Google Sheets Webhook Active</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section View Switcher Tabs -->
+        <div class="admin-tab-switcher mb-3">
+          <button type="button" class="admin-view-tab-btn active" id="btnAdminViewRegistrations">
+            <i class="fa-solid fa-clipboard-check text-warning"></i>
+            <span>Tenant Applications</span>
+            <span class="badge badge-pending-count ms-2" id="adminRegistrationsCountBadge">0</span>
+          </button>
+          <button type="button" class="admin-view-tab-btn" id="btnAdminViewAccounts">
+            <i class="fa-solid fa-users-gear text-primary"></i>
+            <span>Managed User Accounts</span>
+            <span class="badge badge-secondary ms-2" id="adminAccountsCountBadge">0</span>
+          </button>
+        </div>
+
+        <!-- Panel 1: Tenant Registration Applications Review Queue -->
+        <div class="panel-card mb-4" id="adminRegistrationsPanel">
+          <div class="panel-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div>
+              <h3 class="panel-title"><i class="fa-solid fa-id-card text-warning"></i> Tenant Registration Applications</h3>
+              <p class="panel-subtitle">Review applicant details, photos, and identity proofs. Approve to provision tenant account or reject with reason.</p>
+            </div>
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+              <div class="search-box">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="adminRegSearch" class="form-control form-control-sm" placeholder="Search applicant, ID, phone, unit..." aria-label="Search registrations">
+              </div>
+              <select id="adminRegStatusFilter" class="form-select form-select-sm" aria-label="Filter registrations by status" style="width: auto;">
+                <option value="all">All Applications</option>
+                <option value="pending" selected>Pending Review</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+              </select>
+              <button type="button" class="btn btn-outline btn-sm" id="refreshRegistrationsBtn" title="Refresh applications list">
+                <i class="fa-solid fa-rotate"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="panel-body p-0">
+            <div class="table-responsive" id="adminRegistrationsContainer">
+              <table class="records-table" id="adminRegistrationsTable">
+                <thead>
+                  <tr>
+                    <th scope="col">Application ID</th>
+                    <th scope="col">Applicant</th>
+                    <th scope="col">Property / Unit</th>
+                    <th scope="col">Contact</th>
+                    <th scope="col">ID Proof Verification</th>
+                    <th scope="col">Submitted</th>
+                    <th scope="col">Status</th>
+                    <th scope="col" style="text-align: right;">Review Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="adminRegistrationsTbody">
+                  <!-- Dynamically populated via renderAdminRegistrations() -->
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Empty State for Applications -->
+            <div id="adminNoRegistrationsState" class="empty-state" style="display: none; padding: 2.5rem 1rem;">
+              <i class="fa-solid fa-clipboard-list text-muted" style="font-size: 2.5rem; margin-bottom: 0.75rem;"></i>
+              <h4>No matching applications found</h4>
+              <p class="text-muted" style="font-size: 0.85rem;">New tenant applications submitted from the registration form will appear here for review.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Panel 2: Managed User Accounts Panel -->
+        <div class="panel-card" id="adminAccountsPanel" style="display: none;">
+          <div class="panel-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div>
+              <h3 class="panel-title"><i class="fa-solid fa-id-card-clip text-accent"></i> Managed Accounts</h3>
+              <p class="panel-subtitle">Authoritative roster with Owner &amp; Tenant credential generation, password resets, and account controls.</p>
+            </div>
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+              <div class="search-box">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="adminTenantSearch" class="form-control form-control-sm" placeholder="Search by name, ID, phone, or email..." aria-label="Search tenants by name, ID, or phone">
+              </div>
+              <select id="adminRoleFilter" class="form-select form-select-sm" aria-label="Filter accounts by role" style="width: auto;">
+                <option value="all">All Roles</option>
+                <option value="tenant">Tenants Only</option>
+                <option value="owner">Owners Only</option>
+              </select>
+              <select id="adminStatusFilter" class="form-select form-select-sm" aria-label="Filter tenants by account status" style="width: auto;">
+                <option value="all">All Statuses</option>
+                <option value="active">Active Only</option>
+                <option value="inactive">Inactive Only</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="panel-body p-0">
+            <div class="table-responsive" id="adminTenantsContainer">
+              <table class="records-table" id="adminTenantsTable">
+                <thead>
+                  <tr>
+                    <th scope="col">ID</th>
+                    <th scope="col">Role</th>
+                    <th scope="col">Full Name &amp; Username</th>
+                    <th scope="col">Contact Info</th>
+                    <th scope="col">Assigned Room / Details</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">First-Login</th>
+                    <th scope="col">Created</th>
+                    <th scope="col" style="text-align: right;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="adminTenantsTbody">
+                  <!-- Dynamically populated via renderAdminDashboard() -->
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Empty State for Admin Table -->
+            <div id="adminNoTenantsState" class="empty-state" style="display: none; padding: 2.5rem 1rem;">
+              <i class="fa-solid fa-user-slash text-muted" style="font-size: 2.5rem; margin-bottom: 0.75rem;"></i>
+              <h4>No matching tenants found</h4>
+              <p class="text-muted" style="font-size: 0.85rem;">Try adjusting your search criteria or create a new tenant account.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 5. TAB CONTENT: TENANT PORTAL (Restricted Secure Tenant Experience) -->
+      <section id="tab-tenant-portal" class="tab-content">
+        <!-- Tenant Welcome & Dues Hero Banner -->
+        <div class="tenant-portal-hero">
+          <div class="tenant-hero-left">
+            <div class="portal-badge"><i class="fa-solid fa-shield-halved"></i> VERIFIED TENANT PORTAL</div>
+            <h2 id="tpTenantName">Rahul Verma</h2>
+            <p class="text-muted" id="tpRoomTitle"><i class="fa-solid fa-location-dot text-accent"></i> Room 1 (Ground Floor) &bull; Standard Rent: ₹5,000/mo</p>
+            <div class="tp-tenancy-chips">
+              <span class="status-pill status-occupied" id="tpTenancyStatus">Active Tenancy</span>
+              <span class="chip-submeter"><i class="fa-solid fa-bolt text-warning"></i> Meter: <strong id="tpMeterSerial">MTR-101</strong></span>
+              <span class="chip-deposit"><i class="fa-solid fa-lock text-success"></i> Deposit: <strong id="tpDepositAmt">₹10,000</strong></span>
+            </div>
+          </div>
+
+          <div class="tenant-hero-right">
+            <div class="tp-dues-box">
+              <span class="tp-dues-label">TOTAL OUTSTANDING BALANCE DUE</span>
+              <div class="tp-dues-amount text-danger" id="tpBalanceDue">₹0.00</div>
+              <small class="text-muted d-block mb-3" id="tpDueDateText">Due by 5th of every month</small>
+
+              <div class="tp-pay-actions">
+                <a href="#" class="btn btn-success btn-sm w-100" id="tpPayUpiBtn" target="_blank">
+                  <i class="fa-solid fa-mobile-screen-button"></i> 1-Tap Pay via UPI
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tenant Content Grid -->
+        <div class="tenant-grid mt-4">
+          <!-- Left Column: Tenant Bills & Statements -->
+          <div class="tenant-bills-panel card">
+            <div class="panel-header">
+              <h3 class="panel-title"><i class="fa-solid fa-file-invoice-dollar text-accent"></i> My Rent & Electricity Invoices</h3>
+              <span class="badge" id="tpBillsCountBadge">0 Bills</span>
+            </div>
+            <div class="panel-body p-0">
+              <div class="table-responsive">
+                <table class="data-table" id="tenantBillsTable">
+                  <thead>
+                    <tr>
+                      <th>Invoice #</th>
+                      <th>Month</th>
+                      <th>Power (kWh)</th>
+                      <th>Total Amt</th>
+                      <th>Paid</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tenantBillsTableBody">
+                    <!-- Populated dynamically with only this tenant's bills -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Column: Live Payment QR & Landlord Contact -->
+          <div class="tenant-sidebar-panel">
+            <div class="card p-3 mb-3 text-center">
+              <h4 style="font-size: 0.95rem; margin-bottom: 0.5rem;"><i class="fa-solid fa-qrcode text-accent"></i> Scan & Pay Landlord</h4>
+              <p class="text-muted" style="font-size: 0.78rem;">Scan with PhonePe, GPay, Paytm, or BHIM</p>
+              <div class="tp-qr-container" style="padding: 0.75rem; background: #fff; border-radius: 8px; display: inline-block; margin: 0.5rem auto;">
+                <img id="tpUpiQrImg" alt="Tenant UPI QR" src="" style="width: 140px; height: 140px; display: block;">
+              </div>
+              <p class="mt-2" style="font-size: 0.82rem;">UPI ID: <strong id="tpUpiIdLabel">dilip.sharma@upi</strong></p>
+            </div>
+
+            <div class="card p-3">
+              <h4 style="font-size: 0.95rem; margin-bottom: 0.75rem;"><i class="fa-solid fa-user-tie text-accent"></i> Landlord Contact</h4>
+              <p style="font-size: 0.85rem; margin-bottom: 0.35rem;"><strong>Name:</strong> <span id="tpOwnerName">Dilip Sharma</span></p>
+              <p style="font-size: 0.85rem; margin-bottom: 0.35rem;"><strong>Phone:</strong> <span id="tpOwnerPhone">+91 98765 43210</span></p>
+              <p style="font-size: 0.85rem; margin-bottom: 0.75rem;"><strong>Address:</strong> <span id="tpOwnerAddress">Sunrise Lane, Bengaluru</span></p>
+              <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+                <a href="#" class="btn btn-outline btn-sm" id="tpCallOwnerBtn" style="flex: 1; justify-content: center;">
+                  <i class="fa-solid fa-phone"></i> Call Landlord
+                </a>
+                <a href="#" class="btn btn-outline btn-sm text-success" id="tpWaOwnerBtn" target="_blank" style="flex: 1; justify-content: center;">
+                  <i class="fa-brands fa-whatsapp"></i> WhatsApp
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- ==================== MODALS ==================== -->
+
+  <!-- 0. Authorized User Profile & Account Details Modal -->
+  <div class="modal-backdrop" id="authModal" role="dialog" aria-modal="true" aria-labelledby="authModalTitle" aria-hidden="true">
+    <div class="modal-card modal-sm">
+      <div class="modal-header">
+        <h3 id="authModalTitle"><i class="fa-solid fa-id-badge text-accent"></i> Authorized User Profile</h3>
+        <button class="modal-close" id="closeAuthModalBtn" aria-label="Close dialog">&times;</button>
+      </div>
+      <div class="modal-body">
+        <!-- Active User Profile Card -->
+        <div class="profile-card" style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1.15rem; margin-bottom: 1rem; text-align: center;">
+          <div style="width: 52px; height: 52px; border-radius: 50%; background: rgba(56, 189, 248, 0.15); color: var(--accent); display: inline-flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 0.5rem;" id="authProfileAvatar">
+            <i class="fa-solid fa-user-shield" id="authProfileAvatarIcon"></i>
+          </div>
+          <h4 id="authProfileName" style="font-size: 1.15rem; font-weight: 700; margin: 0 0 0.35rem 0;">Dilip Sharma</h4>
+          <div id="authProfileRoleBadge" class="badge badge-warning" style="display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.78rem; padding: 0.3rem 0.75rem; border-radius: 9999px;">
+            <i class="fa-solid fa-crown"></i> Property Owner
+          </div>
+        </div>
+
+        <!-- Account Metadata Details -->
+        <div class="account-details-list" style="display: flex; flex-direction: column; gap: 0.65rem; font-size: 0.84rem; margin-bottom: 1.15rem;">
+          <div style="display: flex; justify-content: space-between; padding-bottom: 0.4rem; border-bottom: 1px solid var(--border-subtle);">
+            <span class="text-muted"><i class="fa-solid fa-at"></i> Username:</span>
+            <strong id="authProfileUsername">dilip</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; padding-bottom: 0.4rem; border-bottom: 1px solid var(--border-subtle);">
+            <span class="text-muted"><i class="fa-solid fa-phone"></i> Mobile / Phone:</span>
+            <strong id="authProfilePhone">9876543210</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; padding-bottom: 0.4rem; border-bottom: 1px solid var(--border-subtle);">
+            <span class="text-muted"><i class="fa-solid fa-envelope"></i> Email:</span>
+            <strong id="authProfileEmail">dilip.sharma@example.com</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; padding-bottom: 0.4rem; border-bottom: 1px solid var(--border-subtle);">
+            <span class="text-muted"><i class="fa-solid fa-shield-halved"></i> Access Scope:</span>
+            <strong id="authProfileScope" style="max-width: 220px; text-align: right;">Full Landlord Scope</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span class="text-muted"><i class="fa-solid fa-circle-check"></i> Session Status:</span>
+            <strong id="authProfileSession" class="text-success"><i class="fa-solid fa-lock"></i> Active & Secured</strong>
+          </div>
+        </div>
+
+        <!-- Quick Passcode Update Section (Authenticated) -->
+        <details style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 0.65rem 0.85rem; margin-bottom: 0.85rem;">
+          <summary style="cursor: pointer; font-size: 0.82rem; font-weight: 600; color: var(--text-main); user-select: none;">
+            <i class="fa-solid fa-key text-accent"></i> Update Account Passcode
+          </summary>
+          <div style="margin-top: 0.75rem;">
+            <div class="form-group mb-2">
+              <label for="authPin" style="font-size: 0.78rem;">New Passcode (min. 4 characters) *</label>
+              <div style="position: relative; display: flex; align-items: center;">
+                <input type="password" id="authPin" name="authPin" class="form-control" placeholder="Enter new passcode" style="padding-right: 2.75rem; font-size: 0.85rem;">
+                <button type="button" id="toggleAuthPinBtn" aria-label="Toggle passcode visibility" style="position: absolute; right: 0.75rem; background: transparent; border: none; color: var(--text-muted); cursor: pointer; padding: 0.25rem; font-size: 0.95rem;">
+                  <i class="fa-solid fa-eye" id="toggleAuthPinIcon"></i>
+                </button>
+              </div>
+            </div>
+            <button type="button" class="btn btn-outline btn-sm" id="authChangePinBtn" style="width: 100%; margin-top: 0.35rem;">
+              <i class="fa-solid fa-check"></i> Save New Passcode
+            </button>
+          </div>
+        </details>
+      </div>
+      <div class="modal-footer" style="display: flex; justify-content: space-between; gap: 0.5rem;">
+        <button type="button" class="btn btn-danger btn-sm" id="authProfileSignOutBtn" style="display: inline-flex; align-items: center; gap: 0.4rem;">
+          <i class="fa-solid fa-arrow-right-from-bracket"></i> Sign Out / Switch User
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" id="dismissAuthModalBtn">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 1. Meter Photo Zoom Viewer Modal -->
+  <div class="modal-backdrop" id="photoViewerModal" role="dialog" aria-modal="true" aria-labelledby="photoViewerTitle" aria-hidden="true">
+    <div class="modal-card modal-sm">
+      <div class="modal-header">
+        <h3 id="photoViewerTitle"><i class="fa-solid fa-camera text-accent"></i> Sub-Meter Dial Photo Proof</h3>
+        <button class="modal-close" id="closePhotoViewerBtn" aria-label="Close dialog">&times;</button>
+      </div>
+      <div class="modal-body text-center">
+        <div class="photo-enlarged-container">
+          <img id="enlargedMeterPhoto" alt="Enlarged meter reading proof" src="">
+        </div>
+        <p class="mt-2 text-muted" id="photoViewerCaption" style="font-size: 0.84rem;">Sub-meter dial reading recorded</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="dismissPhotoViewerBtn">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Google Apps Script Setup Guide Modal -->
+  <div class="modal-backdrop" id="gsheetGuideModal" role="dialog" aria-modal="true" aria-labelledby="gsheetGuideTitle" aria-hidden="true">
+    <div class="modal-card modal-lg">
+      <div class="modal-header">
+        <h3 id="gsheetGuideTitle"><i class="fa-solid fa-table-cells text-success"></i> 2-Minute Google Sheets Setup Guide</h3>
+        <button class="modal-close" id="closeGsheetGuideBtn" aria-label="Close dialog">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="guide-steps">
+          <p>Follow these 3 quick steps to turn any Google Sheet into your private cloud database (100% free):</p>
+          <ol class="setup-ol">
+            <li>Create a new spreadsheet at <strong>sheets.new</strong> and name it <code>Rent Records</code>.</li>
+            <li>In the top menu, click <strong>Extensions &rarr; Apps Script</strong>.</li>
+            <li>Delete any code there and paste the snippet below, then click <strong>Deploy &rarr; New deployment &rarr; Select type: Web app &rarr; Who has access: Anyone</strong>.</li>
+            <li>Copy the resulting Web App URL and paste it into RentPulse Settings!</li>
+          </ol>
+
+          <div class="code-box-wrapper">
+            <div class="code-box-header">
+              <span>Google Apps Script Code (Code.gs)</span>
+              <button class="btn btn-outline btn-sm" id="copyAppsScriptBtn"><i class="fa-solid fa-copy"></i> Copy Script</button>
+            </div>
+            <pre class="code-block" id="appsScriptCode"><code>function doGet(e) {
+  return ContentService.createTextOutput(JSON.stringify({
+    status: "online",
+    service: "RentPulse Webhook",
+    time: new Date().toISOString()
+  })).setMimeType(ContentService.MimeType.JSON);
+}
+
+function doPost(e) {
+  try {
+    if (!e || !e.postData || !e.postData.contents) {
+      return ContentService.createTextOutput(JSON.stringify({status: "error", message: "No data"})).setMimeType(ContentService.MimeType.JSON);
+    }
+    var data = JSON.parse(e.postData.contents);
+    if (data.action === "ping" || data.action === "test_connection") {
+      return ContentService.createTextOutput(JSON.stringify({
+        status: "success",
+        code: "PONG",
+        service: "RentPulse Webhook",
+        time: new Date().toISOString()
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName("Rent_Bills") || ss.insertSheet("Rent_Bills");
+    var headers = ["Timestamp", "Bill Number", "Month", "Tenant Name", "Previous Reading (kWh)", "Current Reading (kWh)", "Units Consumed", "Electricity Bill (₹)", "Room Rent (₹)", "Total Amount (₹)", "Paid Amount (₹)", "Balance Due (₹)", "Status", "Payment Mode", "Invoice PDF Link", "Notes"];
+
+    var folderName = "RentPulse_Invoices";
+    var folderIter = DriveApp.getFoldersByName(folderName);
+    var folder = folderIter.hasNext() ? folderIter.next() : DriveApp.createFolder(folderName);
+
+    if (data.action === "sync_bills" && Array.isArray(data.bills)) {
+      sheet.clearContents();
+      sheet.appendRow(headers);
+      var headerRange = sheet.getRange(1, 1, 1, headers.length);
+      headerRange.setBackground("#4f46e5").setFontColor("#ffffff").setFontWeight("bold");
+      sheet.setFrozenRows(1);
+
+      data.bills.forEach(function(b) {
+        var pdfUrl = "";
+        try {
+          var billNum = b.billNumber || "Bill";
+          var fileName = "Invoice_" + billNum + "_" + (b.billingMonth || "Month") + "_" + (b.status || "Status") + ".pdf";
+          var existing = folder.getFilesByName(fileName);
+          if (existing.hasNext()) {
+            pdfUrl = existing.next().getUrl();
+          } else {
+            var units = (typeof b.unitsConsumed === "number") ? b.unitsConsumed : ((Number(b.currReading) || 0) - (Number(b.prevReading) || 0));
+            var html = '<!DOCTYPE html><html><body style="font-family:sans-serif;padding:25px;"><h2>' + (data.owner ? data.owner.name : 'RentPulse') + '</h2><h3>Invoice #' + billNum + ' (' + b.billingMonth + ')</h3><p>Tenant: ' + (b.tenantName || '') + '</p><p>Total: ₹' + (Number(b.totalAmount) || 0).toFixed(2) + ' | Status: ' + b.status + '</p></body></html>';
+            var blob = Utilities.newBlob(html, "text/html", fileName).getAs("application/pdf");
+            var f = folder.createFile(blob.setName(fileName));
+            f.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+            pdfUrl = f.getUrl();
+          }
+        } catch(err) { pdfUrl = "Error: " + err.toString(); }
+
+        sheet.appendRow([
+          b.createdAt || new Date().toISOString(), b.billNumber, b.billingMonth, b.tenantName,
+          Number(b.prevReading) || 0, Number(b.currReading) || 0, Number(b.unitsConsumed) || 0,
+          Number(b.electricityCost) || 0, Number(b.roomRent) || 0, Number(b.totalAmount) || 0,
+          Number(b.paidAmount) || 0, Number(b.balanceDue) || 0, b.status, b.paymentMode || "",
+          pdfUrl, b.notes || ""
+        ]);
+      });
+      return ContentService.createTextOutput(JSON.stringify({status: "success", count: data.bills.length, folder: folder.getUrl()})).setMimeType(ContentService.MimeType.JSON);
+    }
+    return ContentService.createTextOutput(JSON.stringify({status: "ignored"})).setMimeType(ContentService.MimeType.JSON);
+  } catch(err) {
+    return ContentService.createTextOutput(JSON.stringify({status: "error", message: err.toString()})).setMimeType(ContentService.MimeType.JSON);
+  }
+}</code></pre>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="dismissGsheetGuideBtn">Got It</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Edit Tenant Modal -->
+  <div class="modal-backdrop" id="tenantModal" role="dialog" aria-modal="true" aria-labelledby="tenantModalTitle" aria-hidden="true">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="tenantModalTitle"><i class="fa-solid fa-user-pen text-accent"></i> Tenant Information</h3>
+        <button class="modal-close" id="closeTenantModalBtn" aria-label="Close dialog">&times;</button>
+      </div>
+      <form id="tenantForm">
+        <div class="modal-body">
+          <div class="form-row">
+            <div class="form-group col-6">
+              <label for="modalTenantName">Tenant Full Name *</label>
+              <input type="text" id="modalTenantName" class="form-control" placeholder="Rahul Verma" required>
+            </div>
+            <div class="form-group col-6">
+              <label for="modalTenantPhone">Mobile / WhatsApp Number *</label>
+              <input type="tel" id="modalTenantPhone" class="form-control" placeholder="9811234567" required>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group col-6">
+              <label for="modalTenantMoveIn">Move-in Date</label>
+              <input type="date" id="modalTenantMoveIn" class="form-control">
+            </div>
+            <div class="form-group col-6">
+              <label for="modalTenantDeposit">Security Deposit Paid (<span class="currency-label">₹</span>)</label>
+              <input type="number" id="modalTenantDeposit" class="form-control" placeholder="10000" value="10000">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="modalTenantIdProof">Aadhaar / ID Proof Info</label>
+            <input type="text" id="modalTenantIdProof" class="form-control" placeholder="Aadhaar: XXXX-XXXX-1234">
+          </div>
+
+          <div class="form-group">
+            <label for="modalTenantEmergency">Emergency Contact / Notes</label>
+            <input type="text" id="modalTenantEmergency" class="form-control" placeholder="e.g. Parent phone, work location">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="cancelTenantBtn">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Tenant Info</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 4. Record Payment Modal -->
+  <div class="modal-backdrop" id="paymentModal" role="dialog" aria-modal="true" aria-labelledby="paymentModalTitle" aria-hidden="true">
+    <div class="modal-card modal-sm">
+      <div class="modal-header">
+        <h3 id="paymentModalTitle"><i class="fa-solid fa-money-bill-wave text-success"></i> Record Bill Payment</h3>
+        <button class="modal-close" id="closePaymentModalBtn" aria-label="Close dialog">&times;</button>
+      </div>
+      <form id="paymentForm">
+        <input type="hidden" id="payBillId" value="">
+        <div class="modal-body">
+          <div class="pay-summary">
+            <div class="pay-row"><span>Bill No:</span> <strong id="payBillNo">RP-2026-001</strong></div>
+            <div class="pay-row"><span>Month:</span> <strong id="payBillMonth">October 2026</strong></div>
+            <div class="pay-row"><span>Total Due:</span> <strong class="text-danger" id="payTotalDue">₹0.00</strong></div>
+            <div class="pay-row"><span>Already Paid:</span> <strong id="payPaidAmt">₹0.00</strong></div>
+            <div class="pay-row balance"><span>Remaining:</span> <strong class="text-warning" id="payBalance">₹0.00</strong></div>
+          </div>
+
+          <div class="form-group">
+            <label for="payAmountInput">Payment Amount (<span class="currency-label">₹</span>) *</label>
+            <input type="number" step="1" id="payAmountInput" class="form-control" required>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group col-6">
+              <label for="payModeInput">Payment Mode</label>
+              <select id="payModeInput" class="form-select">
+                <option value="UPI / Online">UPI / Online</option>
+                <option value="Cash">Cash</option>
+                <option value="Bank Transfer">Bank Transfer</option>
+                <option value="Cheque">Cheque</option>
+              </select>
+            </div>
+            <div class="form-group col-6">
+              <label for="payDateInput">Payment Date</label>
+              <input type="date" id="payDateInput" class="form-control" required>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="cancelPayBtn">Cancel</button>
+          <button type="submit" class="btn btn-success"><i class="fa-solid fa-check"></i> Record Payment</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 5. Official Printable Invoice / Receipt Modal with Photo Proof & Dynamic UPI QR -->
+  <div class="modal-backdrop" id="invoiceModal" role="dialog" aria-modal="true" aria-labelledby="invoiceModalTitle" aria-hidden="true">
+    <div class="modal-card modal-lg">
+      <div class="modal-header no-print">
+        <h3 id="invoiceModalTitle"><i class="fa-solid fa-receipt text-accent"></i> Official Rent & Electricity Receipt</h3>
+        <div class="header-btns">
+          <a class="btn btn-outline btn-sm" id="downloadPdfBtn" href="#" target="_blank" style="display: none;" title="Open cloud PDF invoice">
+            <i class="fa-solid fa-file-pdf text-danger"></i> View PDF
+          </a>
+          <button class="btn btn-primary btn-sm" id="printReceiptBtn">
+            <i class="fa-solid fa-print"></i> Print / Save PDF
+          </button>
+          <button class="btn btn-success btn-sm" id="sendWhatsAppBtn">
+            <i class="fa-brands fa-whatsapp"></i> Send via WhatsApp
+          </button>
+          <button class="modal-close" id="closeInvoiceModalBtn" aria-label="Close dialog">&times;</button>
+        </div>
+      </div>
+
+      <div class="modal-body printable-doc" id="printableReceipt">
+        <div class="invoice-sheet">
+          <div class="invoice-header">
+            <div>
+              <h2 id="recOwnerName">Dilip Sharma</h2>
+              <p class="rec-address" id="recPropAddress">House No. 42, Sunrise Lane, Bengaluru</p>
+              <p>Phone: <span id="recOwnerPhone">+91 98765 43210</span></p>
+            </div>
+            <div class="rec-meta">
+              <div class="rec-tag">RENT & ELECTRICITY INVOICE</div>
+              <p><strong>Receipt #:</strong> <span id="recBillNo">RP-2026-001</span></p>
+              <p><strong>Date:</strong> <span id="recDate">21 Oct 2026</span></p>
+              <p><strong>Billing Month:</strong> <span id="recMonth">October 2026</span></p>
+              <div class="rec-stamp" id="recStamp">PAID</div>
+            </div>
+          </div>
+
+          <div class="invoice-details-grid">
+            <div class="detail-card">
+              <span class="detail-label">Tenant Details:</span>
+              <h4 id="recTenantName">Rahul Verma</h4>
+              <p>Phone: <span id="recTenantPhone">+91 98112 34567</span></p>
+              <p>Property: <strong id="recRoomName">Room 1</strong></p>
+            </div>
+            <div class="detail-card">
+              <span class="detail-label">Electricity Sub-meter Reading:</span>
+              <p>Sub-meter Serial: <strong id="recMeterSerial">MTR-101</strong></p>
+              <p>Previous Reading: <strong id="recPrevRead">1200.0 kWh</strong></p>
+              <p>Current Reading: <strong id="recCurrRead">1265.0 kWh</strong></p>
+              <p class="highlight-net">Net Power Consumed: <strong id="recUnitsConsumed">65.0 kWh</strong></p>
+            </div>
+          </div>
+
+          <div class="invoice-table-responsive">
+          <table class="invoice-table">
+            <thead>
+              <tr>
+                <th>Description</th>
+                <th class="text-center">Rate / Calculation</th>
+                <th class="text-right">Amount (<span class="currency-label">₹</span>)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Monthly Room Rent</strong></td>
+                <td class="text-center">Fixed Monthly</td>
+                <td class="text-right" id="recRentAmt">₹5,000.00</td>
+              </tr>
+              <tr>
+                <td>
+                  <strong>Electricity Sub-Meter Consumption</strong><br>
+                  <small class="text-muted" id="recElecDetail">65.0 units @ ₹8.00 / unit</small>
+                </td>
+                <td class="text-center" id="recElecCalc">65.0 kWh × ₹8.00</td>
+                <td class="text-right" id="recElecAmt">₹520.00</td>
+              </tr>
+              <tr id="recWaterRow">
+                <td><strong>Water / Maintenance</strong></td>
+                <td class="text-center">Utility</td>
+                <td class="text-right" id="recWaterAmt">₹0.00</td>
+              </tr>
+              <tr id="recOtherRow">
+                <td><strong>Other Charges</strong></td>
+                <td class="text-center">Service</td>
+                <td class="text-right" id="recOtherAmt">₹0.00</td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr class="table-total-row">
+                <td colspan="2"><strong>Grand Total Amount:</strong></td>
+                <td class="text-right"><strong id="recTotalAmt">₹5,520.00</strong></td>
+              </tr>
+              <tr class="table-paid-row">
+                <td colspan="2">Amount Received:</td>
+                <td class="text-right" id="recPaidAmt">₹5,520.00</td>
+              </tr>
+              <tr class="table-balance-row">
+                <td colspan="2">Outstanding Balance Due:</td>
+                <td class="text-right" id="recBalanceAmt">₹0.00</td>
+              </tr>
+            </tfoot>
+          </table>
+          </div>
+
+          <!-- Meter Proof Photo embed on print/receipt (if attached) -->
+          <div class="receipt-proof-section" id="recMeterPhotoSection" style="display: none;">
+            <div class="proof-header">
+              <span><i class="fa-solid fa-camera"></i> Sub-Meter Photo Proof:</span>
+            </div>
+            <div class="receipt-photo-frame">
+              <img id="recMeterPhotoImg" alt="Meter photo proof" src="">
+            </div>
+          </div>
+
+          <div class="invoice-footer">
+            <div class="footer-payment-block">
+              <div class="receipt-qr-wrapper">
+                <img id="recUpiQrImg" alt="UPI QR" src="">
+              </div>
+              <div class="footer-notes">
+                <strong style="color: #111827;">Direct UPI Payment:</strong>
+                <p id="recUpiInfo">Scan QR or pay UPI: <strong>dilip.sharma@upi</strong></p>
+                <p id="recNotes">Thank you for timely payment!</p>
+              </div>
+            </div>
+            <div class="signature-box">
+              <div class="sign-line"></div>
+              <span>Owner Signature</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. Secure Password Recovery Modal -->
+  <div class="modal-backdrop" id="forgotPasswordModal" role="dialog" aria-modal="true" aria-labelledby="forgotPasswordTitle" aria-hidden="true">
+    <div class="modal-card modal-sm">
+      <div class="modal-header">
+        <h3 id="forgotPasswordTitle"><i class="fa-solid fa-key text-accent"></i> Reset Password</h3>
+        <button class="modal-close" id="closeForgotModalBtn" aria-label="Close dialog">&times;</button>
+      </div>
+
+      <!-- Step 1: Request Reset Token Form -->
+      <div id="forgotStep1">
+        <form id="forgotRequestForm">
+          <div class="modal-body">
+            <p class="text-muted mb-3" style="font-size: 0.82rem;">
+              Enter your registered username or email. If an account is found, a single-use secure reset token will be dispatched.
+            </p>
+            <div class="form-group mb-3">
+              <label for="forgotIdentifierInput"><strong>Username, Mobile, or Email *</strong></label>
+              <input type="text" id="forgotIdentifierInput" class="form-control" placeholder="e.g. dilip or rahul@example.com" required autocomplete="username">
+            </div>
+            <div id="forgotStep1Notice" class="gate-info-box" style="display: none; font-size: 0.8rem; margin-top: 0.75rem;">
+              <i class="fa-solid fa-circle-check text-success"></i>
+              <span id="forgotStep1NoticeText"></span>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" id="cancelForgotBtn">Cancel</button>
+            <button type="submit" class="btn btn-primary" id="forgotRequestSubmitBtn">
+              <i class="fa-solid fa-paper-plane"></i> Send Recovery Token
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Step 2: Enter Token and New Password Form -->
+      <div id="forgotStep2" style="display: none;">
+        <form id="forgotResetForm">
+          <div class="modal-body">
+            <div id="forgotStep2Notice" class="gate-info-box mb-3" style="display: none; font-size: 0.8rem;">
+              <i class="fa-solid fa-circle-check text-success"></i>
+              <span id="forgotStep2NoticeText"></span>
+            </div>
+            <p class="text-muted mb-3" style="font-size: 0.82rem;">
+              Enter the reset token along with your new password.
+            </p>
+            <div class="form-group mb-3">
+              <label for="forgotTokenInput"><strong>Reset Token *</strong></label>
+              <div style="display: flex; gap: 0.5rem; align-items: center;">
+                <input type="text" id="forgotTokenInput" class="form-control" placeholder="32-character reset token" required autocomplete="off">
+                <button type="button" class="btn btn-outline btn-sm" id="copyForgotTokenBtn" title="Copy token" style="white-space: nowrap; padding: 0.45rem 0.75rem;">
+                  <i class="fa-solid fa-copy"></i> Copy
+                </button>
+              </div>
+            </div>
+
+            <div class="form-group mb-3">
+              <label for="forgotNewPasswordInput"><strong>New Password *</strong></label>
+              <div style="position: relative; display: flex; align-items: center;">
+                <input type="password" id="forgotNewPasswordInput" class="form-control" placeholder="Minimum 4 characters" required minlength="4" autocomplete="new-password" style="padding-right: 2.75rem;">
+                <button type="button" id="toggleForgotNewPwdBtn" aria-label="Toggle password visibility" style="position: absolute; right: 0.75rem; background: transparent; border: none; color: var(--text-muted); cursor: pointer; padding: 0.25rem;">
+                  <i class="fa-solid fa-eye" id="toggleForgotNewPwdIcon"></i>
+                </button>
+              </div>
+              <!-- Password Strength Meter -->
+              <div class="pwd-strength-wrap mt-2">
+                <div class="pwd-strength-bar"><div id="pwdStrengthFill" class="strength-fill"></div></div>
+                <small id="pwdStrengthLabel" class="text-muted" style="font-size: 0.72rem;">Strength: Enter at least 4 characters</small>
+              </div>
+            </div>
+
+            <div class="form-group mb-3">
+              <label for="forgotConfirmPasswordInput"><strong>Confirm New Password *</strong></label>
+              <div style="position: relative; display: flex; align-items: center;">
+                <input type="password" id="forgotConfirmPasswordInput" class="form-control" placeholder="Re-enter new password" required minlength="4" autocomplete="new-password" style="padding-right: 2.75rem;">
+                <button type="button" id="toggleForgotConfPwdBtn" aria-label="Toggle confirm password visibility" style="position: absolute; right: 0.75rem; background: transparent; border: none; color: var(--text-muted); cursor: pointer; padding: 0.25rem;">
+                  <i class="fa-solid fa-eye" id="toggleForgotConfPwdIcon"></i>
+                </button>
+              </div>
+            </div>
+
+            <div id="forgotStep2Error" class="gate-error-banner" style="display: none;">
+              <span id="forgotStep2ErrorText"></span>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" id="backToStep1Btn">Back</button>
+            <button type="submit" class="btn btn-success" id="forgotResetSubmitBtn">
+              <i class="fa-solid fa-lock"></i> Set New Password
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== ADMIN & TENANT MANAGEMENT MODALS ==================== -->
+
+  <!-- Modal 7: Add New Tenant Account -->
+  <div class="modal-backdrop" id="addTenantModal" role="dialog" aria-modal="true" aria-labelledby="addTenantModalTitle" aria-hidden="true">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="addTenantModalTitle"><i class="fa-solid fa-user-plus text-primary"></i> Create Tenant Account</h3>
+        <button class="modal-close" id="closeAddTenantModalBtn" aria-label="Close dialog">&times;</button>
+      </div>
+      <form id="addTenantForm">
+        <div class="modal-body">
+          <p class="text-muted mb-3" style="font-size: 0.82rem;">
+            Provision a new tenant account with unique credentials. The tenant will be required to change their temporary password upon their first login.
+          </p>
+          <div class="form-row">
+            <div class="form-group col-6">
+              <label for="newTenantName">Tenant Full Name *</label>
+              <input type="text" id="newTenantName" class="form-control" placeholder="e.g. Priya Nair" required autocomplete="name">
+            </div>
+            <div class="form-group col-6">
+              <label for="newTenantId">Unique Tenant ID *</label>
+              <div style="display: flex; gap: 0.4rem;">
+                <input type="text" id="newTenantId" class="form-control" placeholder="e.g. TNT-102" required autocomplete="off">
+                <button type="button" class="btn btn-outline btn-sm" id="generateTenantIdBtn" title="Generate random ID" style="white-space: nowrap;">
+                  <i class="fa-solid fa-dice"></i> Auto
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group col-6">
+              <label for="newTenantUsername">Unique Username *</label>
+              <input type="text" id="newTenantUsername" class="form-control" placeholder="e.g. priya" required autocomplete="username">
+            </div>
+            <div class="form-group col-6">
+              <label for="newTenantPhone">Mobile / WhatsApp Number</label>
+              <input type="text" id="newTenantPhone" class="form-control" placeholder="e.g. 9833333333" autocomplete="tel">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group col-6">
+              <label for="newTenantEmail">Email Address (Optional)</label>
+              <input type="email" id="newTenantEmail" class="form-control" placeholder="e.g. priya@example.com" autocomplete="email">
+            </div>
+            <div class="form-group col-6">
+              <label for="newTenantRoom">Assigned Room / Unit Display</label>
+              <input type="text" id="newTenantRoom" class="form-control" placeholder="e.g. Room 1 (Ground Floor)" value="Room 1 (Ground Floor)">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group col-7">
+              <label for="newTenantPassword">Initial Temporary Password *</label>
+              <div style="position: relative; display: flex; align-items: center;">
+                <input type="password" id="newTenantPassword" class="form-control" placeholder="Set or auto-generate password" required minlength="4" style="padding-right: 2.75rem;">
+                <button type="button" id="toggleNewTenantPwdBtn" aria-label="Toggle password visibility" style="position: absolute; right: 0.75rem; background: transparent; border: none; color: var(--text-muted); cursor: pointer; padding: 0.25rem;">
+                  <i class="fa-solid fa-eye" id="toggleNewTenantPwdIcon"></i>
+                </button>
+              </div>
+            </div>
+            <div class="form-group col-5 d-flex align-items-end">
+              <button type="button" class="btn btn-outline btn-sm w-100" id="generateTenantPwdBtn" style="height: 42px;">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Auto Generate
+              </button>
+            </div>
+          </div>
+
+          <div class="form-group mb-2">
+            <label for="newTenantStatus">Account Status</label>
+            <select id="newTenantStatus" class="form-select">
+              <option value="active">Active (Can sign in immediately)</option>
+              <option value="inactive">Inactive / Suspended</option>
+            </select>
+          </div>
+
+          <div class="gate-info-box mt-3" style="font-size: 0.78rem;">
+            <i class="fa-solid fa-shield-halved text-success"></i>
+            <span>Password change will be mandatory on tenant's first login. Credentials will be presented for one-time secure copy.</span>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="cancelAddTenantModalBtn">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="saveNewTenantBtn">
+            <i class="fa-solid fa-check"></i> Create Tenant Account
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 7B: Add New Owner Account -->
+  <div class="modal-backdrop" id="addOwnerModal" role="dialog" aria-modal="true" aria-labelledby="addOwnerModalTitle" aria-hidden="true">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="addOwnerModalTitle"><i class="fa-solid fa-crown text-warning"></i> Create Owner Account</h3>
+        <button class="modal-close" id="closeAddOwnerModalBtn" aria-label="Close dialog">&times;</button>
+      </div>
+      <form id="addOwnerForm">
+        <div class="modal-body">
+          <p class="text-muted mb-3" style="font-size: 0.82rem;">
+            Provision a new landlord / owner account with administrative permissions for billing, receipts, and property management.
+          </p>
+          <div class="form-row">
+            <div class="form-group col-6">
+              <label for="newOwnerName">Owner Full Name *</label>
+              <input type="text" id="newOwnerName" class="form-control" placeholder="e.g. Ramesh Kumar" required autocomplete="name">
+            </div>
+            <div class="form-group col-6">
+              <label for="newOwnerId">Unique Owner ID *</label>
+              <div style="display: flex; gap: 0.4rem;">
+                <input type="text" id="newOwnerId" class="form-control" placeholder="e.g. OWN-101" required autocomplete="off">
+                <button type="button" class="btn btn-outline btn-sm" id="generateOwnerIdBtn" title="Generate random ID" style="white-space: nowrap;">
+                  <i class="fa-solid fa-dice"></i> Auto
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group col-6">
+              <label for="newOwnerUsername">Unique Username *</label>
+              <input type="text" id="newOwnerUsername" class="form-control" placeholder="e.g. ramesh" required autocomplete="username">
+            </div>
+            <div class="form-group col-6">
+              <label for="newOwnerPhone">Mobile / WhatsApp Number *</label>
+              <input type="text" id="newOwnerPhone" class="form-control" placeholder="e.g. 9845012345" required autocomplete="tel">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group col-6">
+              <label for="newOwnerEmail">Email Address</label>
+              <input type="email" id="newOwnerEmail" class="form-control" placeholder="e.g. ramesh@example.com" autocomplete="email">
+            </div>
+            <div class="form-group col-6">
+              <label for="newOwnerUpi">UPI ID for Rent Collection</label>
+              <input type="text" id="newOwnerUpi" class="form-control" placeholder="e.g. ramesh@okhdfcbank">
+            </div>
+          </div>
+
+          <div class="form-group mb-3">
+            <label for="newOwnerAddress">Property / House Address</label>
+            <input type="text" id="newOwnerAddress" class="form-control" placeholder="e.g. House No. 12, 4th Cross, Bengaluru">
+          </div>
+
+          <div class="form-row">
+            <div class="form-group col-7">
+              <label for="newOwnerPassword">Initial Password *</label>
+              <div style="position: relative; display: flex; align-items: center;">
+                <input type="password" id="newOwnerPassword" class="form-control" placeholder="Set or auto-generate password" required minlength="4" style="padding-right: 2.75rem;">
+                <button type="button" id="toggleNewOwnerPwdBtn" aria-label="Toggle password visibility" style="position: absolute; right: 0.75rem; background: transparent; border: none; color: var(--text-muted); cursor: pointer; padding: 0.25rem;">
+                  <i class="fa-solid fa-eye" id="toggleNewOwnerPwdIcon"></i>
+                </button>
+              </div>
+            </div>
+            <div class="form-group col-5 d-flex align-items-end">
+              <button type="button" class="btn btn-outline btn-sm w-100" id="generateOwnerPwdBtn" style="height: 42px;">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Auto Generate
+              </button>
+            </div>
+          </div>
+
+          <div class="form-group mb-2">
+            <label for="newOwnerStatus">Account Status</label>
+            <select id="newOwnerStatus" class="form-select">
+              <option value="active">Active (Can sign in immediately)</option>
+              <option value="inactive">Inactive / Suspended</option>
+            </select>
+          </div>
+
+          <div class="gate-info-box mt-3" style="font-size: 0.78rem;">
+            <i class="fa-solid fa-shield-halved text-success"></i>
+            <span>Password change will be mandatory on owner's first login. Credentials will be presented for one-time secure copy.</span>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="cancelAddOwnerModalBtn">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="saveNewOwnerBtn">
+            <i class="fa-solid fa-check"></i> Create Owner Account
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 8: One-Time Credential Display with Copy -->
+  <div class="modal-backdrop" id="credentialDisplayModal" role="dialog" aria-modal="true" aria-labelledby="credentialModalTitle" aria-hidden="true">
+    <div class="modal-card modal-sm">
+      <div class="modal-header">
+        <h3 id="credentialModalTitle"><i class="fa-solid fa-key text-success"></i> <span id="credModalTitleText">Account Credentials</span></h3>
+        <button class="modal-close" id="closeCredentialModalBtn" aria-label="Close dialog">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="gate-info-box mb-3" style="font-size: 0.8rem;">
+          <i class="fa-solid fa-triangle-exclamation text-warning"></i>
+          <span>Share these credentials securely with the user. For security, the initial plaintext password will not be shown again.</span>
+        </div>
+
+        <div class="credential-box-card" style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1rem; font-family: monospace; font-size: 0.86rem; line-height: 1.6;">
+          <div><strong style="color: var(--text-muted);"><span id="credRoleLabel">Account</span>:</strong> <span id="credTenantName" style="color: var(--text-main); font-weight: 700;"></span></div>
+          <div><strong style="color: var(--text-muted);">Account ID:</strong> <span id="credTenantId" style="color: var(--accent); font-weight: 700;"></span></div>
+          <div><strong style="color: var(--text-muted);">Username:</strong> <span id="credUsername" style="color: var(--text-main); font-weight: 700;"></span></div>
+          <div><strong style="color: var(--text-muted);">Initial Pass:</strong> <span id="credPassword" style="color: var(--success); font-weight: 700;"></span></div>
+          <div><strong style="color: var(--text-muted);">Status:</strong> <span id="credStatus" style="color: var(--text-main);"></span></div>
+          <div><strong style="color: var(--text-muted);">First Login:</strong> <span style="color: var(--warning); font-weight: 600;">Password Change Required</span></div>
+        </div>
+      </div>
+      <div class="modal-footer" style="display: flex; justify-content: space-between; gap: 0.5rem;">
+        <button type="button" class="btn btn-outline" id="copyCredentialsBtn">
+          <i class="fa-solid fa-copy"></i> Copy Credentials
+        </button>
+        <button type="button" class="btn btn-primary" id="dismissCredentialModalBtn">
+          <i class="fa-solid fa-check"></i> Done
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 9: Mandatory First-Login Password Change -->
+  <div class="modal-backdrop" id="forcePasswordChangeModal" role="dialog" aria-modal="true" aria-labelledby="forcePasswordChangeTitle" aria-hidden="true" style="z-index: 10002;">
+    <div class="modal-card modal-sm">
+      <div class="modal-header">
+        <h3 id="forcePasswordChangeTitle"><i class="fa-solid fa-shield-halved text-warning"></i> Mandatory Password Update</h3>
+      </div>
+      <form id="forcePasswordChangeForm">
+        <div class="modal-body">
+          <div class="gate-info-box mb-3" style="font-size: 0.8rem;">
+            <i class="fa-solid fa-lock text-warning"></i>
+            <span>Welcome! To secure your account, you must update your password before accessing the dashboard.</span>
+          </div>
+
+          <div class="mb-3 text-center">
+            <span class="badge badge-warning" id="forceChangeUserBadge" style="font-size: 0.8rem; padding: 0.35rem 0.85rem; border-radius: 9999px;">
+              User: <span id="forceChangeUsernameDisplay">—</span>
+            </span>
+          </div>
+
+          <div class="form-group mb-3">
+            <label for="forceNewPasswordInput"><strong>Choose New Password (min. 4 characters) *</strong></label>
+            <div style="position: relative; display: flex; align-items: center;">
+              <input type="password" id="forceNewPasswordInput" class="form-control" placeholder="Enter new password" required minlength="4" autocomplete="new-password" style="padding-right: 2.75rem;">
+              <button type="button" id="toggleForceNewPwdBtn" aria-label="Toggle new password visibility" style="position: absolute; right: 0.75rem; background: transparent; border: none; color: var(--text-muted); cursor: pointer; padding: 0.25rem;">
+                <i class="fa-solid fa-eye" id="toggleForceNewPwdIcon"></i>
+              </button>
+            </div>
+            <div class="pwd-strength-wrap mt-2">
+              <div class="pwd-strength-bar"><div id="forcePwdStrengthFill" class="strength-fill"></div></div>
+              <small id="forcePwdStrengthLabel" class="text-muted" style="font-size: 0.72rem;">Strength: Enter at least 4 characters</small>
+            </div>
+          </div>
+
+          <div class="form-group mb-3">
+            <label for="forceConfirmPasswordInput"><strong>Confirm New Password *</strong></label>
+            <div style="position: relative; display: flex; align-items: center;">
+              <input type="password" id="forceConfirmPasswordInput" class="form-control" placeholder="Re-enter new password" required minlength="4" autocomplete="new-password" style="padding-right: 2.75rem;">
+              <button type="button" id="toggleForceConfirmPwdBtn" aria-label="Toggle confirm password visibility" style="position: absolute; right: 0.75rem; background: transparent; border: none; color: var(--text-muted); cursor: pointer; padding: 0.25rem;">
+                <i class="fa-solid fa-eye" id="toggleForceConfirmPwdIcon"></i>
+              </button>
+            </div>
+          </div>
+
+          <div id="forcePasswordError" class="gate-error-banner" style="display: none; font-size: 0.8rem;">
+            <i class="fa-solid fa-circle-exclamation text-danger"></i>
+            <span id="forcePasswordErrorText">Passwords do not match.</span>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-success w-100" id="saveForcedPasswordBtn">
+            <i class="fa-solid fa-check"></i> Update Password & Proceed
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 10: Admin Reset Tenant/Owner Password -->
+  <div class="modal-backdrop" id="adminResetPasswordModal" role="dialog" aria-modal="true" aria-labelledby="adminResetPwdModalTitle" aria-hidden="true">
+    <div class="modal-card modal-sm">
+      <div class="modal-header">
+        <h3 id="adminResetPwdModalTitle"><i class="fa-solid fa-key text-warning"></i> Reset Account Password</h3>
+        <button class="modal-close" id="closeResetPasswordModalBtn" aria-label="Close dialog">&times;</button>
+      </div>
+      <form id="adminResetPasswordForm">
+        <input type="hidden" id="resetTargetUserId">
+        <div class="modal-body">
+          <p class="text-muted mb-3" style="font-size: 0.82rem;">
+            Assign a new temporary password for <strong id="resetTargetTenantName">User Account</strong>.
+          </p>
+
+          <div class="form-group mb-3">
+            <label for="resetNewPasswordInput"><strong>New Temporary Password *</strong></label>
+            <div style="position: relative; display: flex; align-items: center;">
+              <input type="password" id="resetNewPasswordInput" class="form-control" placeholder="Enter new password" required minlength="4" style="padding-right: 2.75rem;">
+              <button type="button" id="toggleResetPwdBtn" aria-label="Toggle reset password visibility" style="position: absolute; right: 0.75rem; background: transparent; border: none; color: var(--text-muted); cursor: pointer; padding: 0.25rem;">
+                <i class="fa-solid fa-eye" id="toggleResetPwdIcon"></i>
+              </button>
+            </div>
+            <button type="button" class="btn btn-outline btn-sm mt-2 w-100" id="generateResetPwdBtn">
+              <i class="fa-solid fa-wand-magic-sparkles"></i> Auto Generate Password
+            </button>
+          </div>
+
+          <div class="form-check mb-2">
+            <label for="resetRequireChangeCheck" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.82rem;">
+              <input type="checkbox" id="resetRequireChangeCheck" aria-label="Require password change on next login" checked>
+              <span>Require password change on next login</span>
+            </label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="cancelResetPasswordModalBtn">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="saveAdminResetPasswordBtn">
+            <i class="fa-solid fa-check"></i> Reset Password
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 11: Admin Edit Tenant/Owner Details -->
+  <div class="modal-backdrop" id="adminEditTenantModal" role="dialog" aria-modal="true" aria-labelledby="adminEditTenantModalTitle" aria-hidden="true">
+    <div class="modal-card modal-sm">
+      <div class="modal-header">
+        <h3 id="adminEditTenantModalTitle"><i class="fa-solid fa-user-pen text-accent"></i> Edit Account Profile</h3>
+        <button class="modal-close" id="closeEditTenantModalBtn" aria-label="Close dialog">&times;</button>
+      </div>
+      <form id="adminEditTenantForm">
+        <input type="hidden" id="editTenantUserId">
+        <div class="modal-body">
+          <div class="form-group mb-3">
+            <label for="editTenantNameInput">Full Name *</label>
+            <input type="text" id="editTenantNameInput" class="form-control" required autocomplete="name">
+          </div>
+          <div class="form-group mb-3">
+            <label for="editTenantPhoneInput">Phone / WhatsApp</label>
+            <input type="text" id="editTenantPhoneInput" class="form-control" autocomplete="tel">
+          </div>
+          <div class="form-group mb-3">
+            <label for="editTenantEmailInput">Email Address</label>
+            <input type="email" id="editTenantEmailInput" class="form-control" autocomplete="email">
+          </div>
+          <div class="form-group mb-3">
+            <label for="editTenantRoomInput" id="editTenantRoomLabel">Assigned Room / Property</label>
+            <input type="text" id="editTenantRoomInput" class="form-control">
+          </div>
+          <div class="form-group mb-2">
+            <label for="editTenantStatusSelect">Account Status</label>
+            <select id="editTenantStatusSelect" class="form-select">
+              <option value="active">Active</option>
+              <option value="inactive">Inactive / Suspended</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="cancelEditTenantModalBtn">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="saveAdminEditTenantBtn">
+            <i class="fa-solid fa-check"></i> Save Changes
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 12: Complete Tenant Registration Application Form -->
+  <div class="modal-backdrop" id="tenantRegistrationModal" role="dialog" aria-modal="true" aria-labelledby="tenantRegModalTitle" aria-hidden="true">
+    <div class="modal-card modal-lg">
+      <div class="modal-header">
+        <div>
+          <h3 id="tenantRegModalTitle"><i class="fa-solid fa-file-contract text-primary"></i> Tenant Rental Registration</h3>
+          <p class="modal-subtitle">Submit your tenancy application with identity verification for landlord review.</p>
+        </div>
+        <button class="modal-close" id="closeTenantRegModalBtn" aria-label="Close registration dialog">&times;</button>
+      </div>
+      <form id="tenantRegistrationForm" novalidate>
+        <div class="modal-body">
+          <!-- Section 1: Personal Details -->
+          <div class="form-section-card mb-3">
+            <h4 class="form-section-title"><i class="fa-solid fa-user text-accent"></i> 1. Personal Information</h4>
+            <div class="form-grid-2">
+              <div class="form-group mb-2">
+                <label for="regFullName">Full Legal Name *</label>
+                <input type="text" id="regFullName" class="form-control" placeholder="e.g. Rahul Verma" required>
+              </div>
+              <div class="form-group mb-2">
+                <label for="regEmail">Email Address *</label>
+                <input type="email" id="regEmail" class="form-control" placeholder="e.g. rahul@example.com" required>
+              </div>
+            </div>
+            <div class="form-grid-2">
+              <div class="form-group mb-2">
+                <label for="regPhone">Mobile / WhatsApp Number *</label>
+                <input type="tel" id="regPhone" class="form-control" placeholder="e.g. 9811234567" required pattern="[0-9+ ]{10,14}">
+              </div>
+              <div class="form-group mb-2">
+                <label for="regDob">Date of Birth</label>
+                <input type="date" id="regDob" class="form-control">
+              </div>
+            </div>
+            <div class="form-group mb-2">
+              <label for="regAddress">Current Residential Address *</label>
+              <textarea id="regAddress" class="form-control" rows="2" placeholder="Enter your full current permanent or residential address" required></textarea>
+            </div>
+            <div class="form-grid-2">
+              <div class="form-group mb-2">
+                <label for="regEmergName">Emergency Contact Name *</label>
+                <input type="text" id="regEmergName" class="form-control" placeholder="e.g. Ramesh Verma (Father)" required>
+              </div>
+              <div class="form-group mb-2">
+                <label for="regEmergPhone">Emergency Contact Phone *</label>
+                <input type="tel" id="regEmergPhone" class="form-control" placeholder="e.g. 9811299999" required>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 2: Rental and Property Details -->
+          <div class="form-section-card mb-3">
+            <h4 class="form-section-title"><i class="fa-solid fa-building text-warning"></i> 2. Rental &amp; Property Information</h4>
+            <div class="form-grid-2">
+              <div class="form-group mb-2">
+                <label for="regPropertySelect">Selected Property *</label>
+                <select id="regPropertySelect" class="form-select" required>
+                  <option value="prop-1">Room 1 (Ground Floor) - Sunrise Lane</option>
+                </select>
+              </div>
+              <div class="form-group mb-2">
+                <label for="regUnitNumber">Flat / Unit / Room Number *</label>
+                <input type="text" id="regUnitNumber" class="form-control" value="Room 1 (Ground Floor)" required>
+              </div>
+            </div>
+            <div class="form-grid-2">
+              <div class="form-group mb-2">
+                <label for="regMoveInDate">Intended Move-In Date *</label>
+                <input type="date" id="regMoveInDate" class="form-control" required>
+              </div>
+              <div class="form-group mb-2">
+                <label for="regOccupantsCount">Number of Occupants *</label>
+                <input type="number" id="regOccupantsCount" class="form-control" min="1" max="10" value="1" required>
+              </div>
+            </div>
+            <div class="form-group mb-2">
+              <label for="regNotes">Rental Reference or Special Notes (Optional)</label>
+              <input type="text" id="regNotes" class="form-control" placeholder="e.g. Employed at Tech Corp Bengaluru, lease reference">
+            </div>
+          </div>
+
+          <!-- Section 3: Applicant Photograph Upload -->
+          <div class="form-section-card mb-3">
+            <h4 class="form-section-title"><i class="fa-solid fa-camera text-primary"></i> 3. Applicant Photograph</h4>
+            <p class="text-muted" style="font-size: 0.8rem;">Upload a clear recent portrait photo (JPEG, PNG, or WebP &bull; max 5MB).</p>
+            <div class="upload-dropzone" id="regPhotoDropzone">
+              <div class="dropzone-prompt" id="regPhotoPrompt">
+                <i class="fa-solid fa-cloud-arrow-up upload-icon"></i>
+                <span>Drag &amp; drop your photo here or <span class="browse-link">browse</span></span>
+                <small class="text-muted">JPG, PNG, or WebP up to 5MB</small>
+              </div>
+              <input type="file" id="regPhotoInput" accept="image/jpeg,image/png,image/webp" style="display: none;">
+              <div class="image-preview-card" id="regPhotoPreviewWrap" style="display: none;">
+                <img id="regPhotoPreviewImg" src="" alt="Applicant Photo Preview" class="img-preview-thumb">
+                <div class="preview-meta">
+                  <span class="preview-filename" id="regPhotoFileName">photo.jpg</span>
+                  <span class="preview-filesize" id="regPhotoFileSize">1.2 MB</span>
+                  <button type="button" class="btn btn-sm btn-outline btn-replace" id="regPhotoReplaceBtn">
+                    <i class="fa-solid fa-rotate"></i> Replace
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 4: Identity Proof Verification -->
+          <div class="form-section-card mb-3">
+            <h4 class="form-section-title"><i class="fa-solid fa-id-badge text-success"></i> 4. Identity Proof Verification</h4>
+            <div class="form-grid-2">
+              <div class="form-group mb-2">
+                <label for="regIdProofType">Identity Document Type *</label>
+                <select id="regIdProofType" class="form-select" required>
+                  <option value="Aadhaar Card">Aadhaar Card</option>
+                  <option value="Passport">Passport</option>
+                  <option value="Voter ID Card">Voter ID Card</option>
+                  <option value="Driving License">Driving License</option>
+                  <option value="PAN Card">PAN Card</option>
+                </select>
+              </div>
+              <div class="form-group mb-2">
+                <label for="regIdProofNumber">ID Document Number *</label>
+                <input type="text" id="regIdProofNumber" class="form-control" placeholder="e.g. 4321-8765-9012" required>
+              </div>
+            </div>
+
+            <!-- Front Side Document Upload -->
+            <div class="mb-3">
+              <label class="form-label">Front-Side Document Scan / Photo *</label>
+              <div class="upload-dropzone" id="regIdFrontDropzone">
+                <div class="dropzone-prompt" id="regIdFrontPrompt">
+                  <i class="fa-solid fa-id-card upload-icon"></i>
+                  <span>Upload Front Side &bull; <span class="browse-link">Choose file</span></span>
+                  <small class="text-muted">Clear readable scan / photo (JPG, PNG, WebP &bull; max 5MB)</small>
+                </div>
+                <input type="file" id="regIdFrontInput" accept="image/jpeg,image/png,image/webp,application/pdf" style="display: none;">
+                <div class="image-preview-card" id="regIdFrontPreviewWrap" style="display: none;">
+                  <img id="regIdFrontPreviewImg" src="" alt="ID Front Preview" class="img-preview-thumb">
+                  <div class="preview-meta">
+                    <span class="preview-filename" id="regIdFrontFileName">front_id.jpg</span>
+                    <span class="preview-filesize" id="regIdFrontFileSize">1.5 MB</span>
+                    <button type="button" class="btn btn-sm btn-outline btn-replace" id="regIdFrontReplaceBtn">
+                      <i class="fa-solid fa-rotate"></i> Replace
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Back Side Document Upload -->
+            <div class="mb-2">
+              <label class="form-label">Back-Side Document Scan / Photo (if applicable)</label>
+              <div class="upload-dropzone" id="regIdBackDropzone">
+                <div class="dropzone-prompt" id="regIdBackPrompt">
+                  <i class="fa-solid fa-id-card-clip upload-icon"></i>
+                  <span>Upload Back Side &bull; <span class="browse-link">Choose file</span></span>
+                  <small class="text-muted">Aadhaar, Voter ID, or License back address side</small>
+                </div>
+                <input type="file" id="regIdBackInput" accept="image/jpeg,image/png,image/webp,application/pdf" style="display: none;">
+                <div class="image-preview-card" id="regIdBackPreviewWrap" style="display: none;">
+                  <img id="regIdBackPreviewImg" src="" alt="ID Back Preview" class="img-preview-thumb">
+                  <div class="preview-meta">
+                    <span class="preview-filename" id="regIdBackFileName">back_id.jpg</span>
+                    <span class="preview-filesize" id="regIdBackFileSize">1.1 MB</span>
+                    <button type="button" class="btn btn-sm btn-outline btn-replace" id="regIdBackReplaceBtn">
+                      <i class="fa-solid fa-rotate"></i> Replace
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 5: Consent & Security Declaration -->
+          <div class="gate-info-box mb-3" style="font-size: 0.82rem; line-height: 1.45;">
+            <i class="fa-solid fa-shield-halved text-success"></i>
+            <div>
+              <strong>Privacy &amp; Data Security Guarantee:</strong> All identity documents and personal information are securely encrypted in transit and stored in protected cloud storage accessible exclusively to authorized property reviewers. We never share your records publicly.
+            </div>
+          </div>
+
+          <div class="form-check mb-3">
+            <input type="checkbox" id="regConsentCheck" class="form-check-input" required>
+            <label for="regConsentCheck" class="form-check-label" style="font-size: 0.85rem;">
+              I certify that all details and identity documents provided are genuine and true. I authorize the landlord/administrator to verify my tenancy application. *
+            </label>
+          </div>
+
+          <!-- Inline Submit Action Strip (Directly Visible at End of Form) -->
+          <div class="registration-submit-prompt-card p-3 mb-3" style="background: rgba(99, 102, 241, 0.08); border: 1.5px solid rgba(99, 102, 241, 0.3); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem;">
+            <div>
+              <div style="font-weight: 700; color: var(--text-main); font-size: 0.92rem;"><i class="fa-solid fa-circle-check text-success"></i> Tenancy Details Completed</div>
+              <p class="text-muted mb-0" style="font-size: 0.78rem;">Click submit below to lodge your application directly to Google Sheets cloud.</p>
+            </div>
+            <button type="submit" class="btn btn-primary btn-submit-reg" id="submitTenantRegInlineBtn">
+              <i class="fa-solid fa-paper-plane"></i> Submit Registration
+            </button>
+          </div>
+
+          <!-- Inline Error Banner -->
+          <div id="regErrorBanner" class="gate-error-banner" style="display: none;">
+            <i class="fa-solid fa-circle-exclamation text-danger"></i>
+            <span id="regErrorText">Please fill in all required fields and upload your photograph.</span>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="cancelTenantRegBtn">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-submit-reg" id="submitTenantRegBtn">
+            <i class="fa-solid fa-paper-plane"></i> Submit Application
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 13: Tenant Registration Submission Confirmation -->
+  <div class="modal-backdrop" id="registrationSuccessModal" role="dialog" aria-modal="true" aria-labelledby="regSuccessModalTitle" aria-hidden="true">
+    <div class="modal-card modal-md text-center">
+      <div class="modal-body p-4">
+        <div class="success-icon-badge mb-3">
+          <i class="fa-solid fa-circle-check text-success" style="font-size: 3.5rem;"></i>
+        </div>
+        <h3 id="regSuccessModalTitle" class="mb-2">Application Submitted!</h3>
+        <p class="text-muted mb-4" style="font-size: 0.88rem;">
+          Your tenancy registration application has been received and logged in Google Sheets. It is now awaiting review by the property owner.
+        </p>
+
+        <!-- Registration ID Display Card -->
+        <div class="reg-id-display-card mb-4">
+          <span class="reg-id-label">YOUR UNIQUE REGISTRATION ID</span>
+          <div class="reg-id-value-wrap">
+            <strong id="successRegIdDisplay" class="reg-id-text">REG-20261023-0000</strong>
+            <button type="button" class="btn btn-sm btn-outline" id="copyRegIdBtn" title="Copy to clipboard">
+              <i class="fa-solid fa-copy"></i> Copy
+            </button>
+          </div>
+          <span class="badge badge-warning mt-2">
+            <i class="fa-solid fa-hourglass-half"></i> Status: Pending Owner Approval
+          </span>
+        </div>
+
+        <div class="gate-info-box mb-4 text-start" style="font-size: 0.8rem;">
+          <i class="fa-solid fa-info-circle text-accent"></i>
+          <span>Save this Registration ID. Once approved by the owner, your account will be activated and you can sign in using your registered mobile number.</span>
+        </div>
+
+        <div class="d-flex gap-2 justify-content-center flex-wrap">
+          <button type="button" class="btn btn-outline" id="checkStatusFromSuccessBtn">
+            <i class="fa-solid fa-magnifying-glass"></i> Check Application Status
+          </button>
+          <button type="button" class="btn btn-primary" id="closeRegSuccessBtn">
+            Done &amp; Return to Sign In
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 14: Check Application Status Modal -->
+  <div class="modal-backdrop" id="checkStatusModal" role="dialog" aria-modal="true" aria-labelledby="checkStatusModalTitle" aria-hidden="true">
+    <div class="modal-card modal-md">
+      <div class="modal-header">
+        <div>
+          <h3 id="checkStatusModalTitle"><i class="fa-solid fa-magnifying-glass text-accent"></i> Track Application Status</h3>
+          <p class="modal-subtitle">Check your tenancy registration approval status in real-time.</p>
+        </div>
+        <button class="modal-close" id="closeCheckStatusModalBtn" aria-label="Close status dialog">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="checkStatusForm" class="mb-3">
+          <div class="form-group mb-2">
+            <label for="statusQueryInput"><strong>Enter Registration ID or Mobile Number *</strong></label>
+            <div style="display: flex; gap: 0.5rem;">
+              <input type="text" id="statusQueryInput" class="form-control" placeholder="e.g. REG-20261023-4819 or 9811234567" required>
+              <button type="submit" class="btn btn-primary" id="btnSubmitCheckStatus">
+                <i class="fa-solid fa-search"></i> Check
+              </button>
+            </div>
+          </div>
+        </form>
+
+        <!-- Status Loading State -->
+        <div id="statusCheckLoading" class="text-center py-4" style="display: none;">
+          <i class="fa-solid fa-circle-notch fa-spin text-accent" style="font-size: 2rem;"></i>
+          <p class="text-muted mt-2" style="font-size: 0.85rem;">Querying Google Sheets authoritative records...</p>
+        </div>
+
+        <!-- Result Container -->
+        <div id="statusResultCard" class="status-result-card" style="display: none;">
+          <!-- Dynamically filled via checkApplicationStatus() -->
+        </div>
+
+        <!-- Error Container -->
+        <div id="statusCheckError" class="gate-error-banner" style="display: none;">
+          <i class="fa-solid fa-circle-xmark text-danger"></i>
+          <span id="statusCheckErrorText">No registration found with those details.</span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="closeCheckStatusFooterBtn">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 15: Secure ID Proof & Document Viewer (Owner / Admin) -->
+  <div class="modal-backdrop" id="viewIdProofModal" role="dialog" aria-modal="true" aria-labelledby="viewIdProofModalTitle" aria-hidden="true">
+    <div class="modal-card modal-lg">
+      <div class="modal-header">
+        <div>
+          <h3 id="viewIdProofModalTitle"><i class="fa-solid fa-id-card text-primary"></i> Applicant Verification &amp; ID Proof</h3>
+          <p class="modal-subtitle" id="viewIdProofSubtitle">Registration Review &bull; <span id="docViewerRegId">REG-XXXX</span></p>
+        </div>
+        <button class="modal-close" id="closeViewIdProofBtn" aria-label="Close document viewer">&times;</button>
+      </div>
+      <div class="modal-body" style="max-height: 75vh; overflow-y: auto;">
+        <!-- Applicant Details Summary Header -->
+        <div class="doc-viewer-meta-grid mb-3">
+          <div class="meta-item">
+            <span class="meta-label">Applicant Name</span>
+            <strong id="docViewerApplicantName">—</strong>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Mobile &amp; Email</span>
+            <span id="docViewerContact">—</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Property &amp; Unit</span>
+            <span id="docViewerProperty">—</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Application Status</span>
+            <span id="docViewerStatusBadge" class="badge badge-warning">Pending</span>
+          </div>
+        </div>
+
+        <!-- Document Viewer Tabs / Grids -->
+        <div class="doc-viewer-grid">
+          <!-- Applicant Photograph -->
+          <div class="doc-panel-card">
+            <div class="doc-panel-header">
+              <i class="fa-solid fa-portrait text-accent"></i> <strong>Applicant Photograph</strong>
+            </div>
+            <div class="doc-image-container" id="docViewerPhotoContainer">
+              <img id="docViewerPhotoImg" src="" alt="Applicant Photo" class="doc-view-img">
+              <span id="docViewerNoPhotoText" class="text-muted" style="display: none;">No photograph uploaded</span>
+            </div>
+          </div>
+
+          <!-- Front ID Scan -->
+          <div class="doc-panel-card">
+            <div class="doc-panel-header">
+              <i class="fa-solid fa-id-card text-success"></i> <strong>ID Proof (Front)</strong>
+              <small class="text-muted ms-auto" id="docViewerIdTypeBadge">Aadhaar</small>
+            </div>
+            <div class="doc-image-container" id="docViewerIdFrontContainer">
+              <img id="docViewerIdFrontImg" src="" alt="ID Front Scan" class="doc-view-img">
+              <span id="docViewerNoFrontText" class="text-muted" style="display: none;">No front scan uploaded</span>
+            </div>
+          </div>
+
+          <!-- Back ID Scan -->
+          <div class="doc-panel-card">
+            <div class="doc-panel-header">
+              <i class="fa-solid fa-id-card-clip text-warning"></i> <strong>ID Proof (Back)</strong>
+            </div>
+            <div class="doc-image-container" id="docViewerIdBackContainer">
+              <img id="docViewerIdBackImg" src="" alt="ID Back Scan" class="doc-view-img">
+              <span id="docViewerNoBackText" class="text-muted" style="display: none;">No back scan provided</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer d-flex justify-content-between align-items-center">
+        <button type="button" class="btn btn-secondary" id="closeViewIdProofFooterBtn">Close</button>
+        <div class="d-flex gap-2" id="docViewerActionBtns">
+          <button type="button" class="btn btn-danger" id="docViewerRejectBtn">
+            <i class="fa-solid fa-xmark"></i> Reject Application
+          </button>
+          <button type="button" class="btn btn-success" id="docViewerApproveBtn">
+            <i class="fa-solid fa-check"></i> Approve Application
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 16: Reject Application Dialog (Owner / Admin) -->
+  <div class="modal-backdrop" id="rejectApplicationModal" role="dialog" aria-modal="true" aria-labelledby="rejectAppModalTitle" aria-hidden="true">
+    <div class="modal-card modal-md">
+      <div class="modal-header">
+        <div>
+          <h3 id="rejectAppModalTitle"><i class="fa-solid fa-triangle-exclamation text-danger"></i> Reject Application</h3>
+          <p class="modal-subtitle">Specify reason for rejecting <strong id="rejectTargetApplicantName">Applicant</strong></p>
+        </div>
+        <button class="modal-close" id="closeRejectAppModalBtn" aria-label="Close rejection dialog">&times;</button>
+      </div>
+      <form id="rejectApplicationForm">
+        <input type="hidden" id="rejectTargetRegId">
+        <div class="modal-body">
+          <p class="text-muted mb-2" style="font-size: 0.82rem;">
+            Please provide a specific rejection reason. This will be stored in Google Sheets and shown to the applicant when they check their status.
+          </p>
+
+          <!-- Quick Reason Preset Chips -->
+          <div class="rejection-presets mb-3">
+            <span class="preset-label" style="font-size: 0.75rem; color: var(--text-muted);">Quick Suggested Reasons:</span>
+            <div class="d-flex flex-wrap gap-1 mt-1">
+              <button type="button" class="btn btn-xs btn-outline chip-preset" data-reason="Incomplete or unreadable ID proof scan">Incomplete / unreadable ID</button>
+              <button type="button" class="btn btn-xs btn-outline chip-preset" data-reason="Unit is already occupied or under lease">Unit already leased</button>
+              <button type="button" class="btn btn-xs btn-outline chip-preset" data-reason="Information discrepancy in application details">Discrepancy in details</button>
+              <button type="button" class="btn btn-xs btn-outline chip-preset" data-reason="Contact number or email address unreachable">Contact unreachable</button>
+            </div>
+          </div>
+
+          <div class="form-group mb-2">
+            <label for="rejectReasonInput"><strong>Rejection Reason *</strong></label>
+            <textarea id="rejectReasonInput" class="form-control" rows="3" placeholder="Explain clearly why this application is rejected..." required></textarea>
+          </div>
+
+          <div id="rejectErrorBanner" class="gate-error-banner" style="display: none;">
+            <i class="fa-solid fa-circle-exclamation text-danger"></i>
+            <span id="rejectErrorText">A rejection reason is required.</span>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="cancelRejectAppBtn">Cancel</button>
+          <button type="submit" class="btn btn-danger" id="confirmRejectAppBtn">
+            <i class="fa-solid fa-xmark"></i> Confirm Rejection
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 17: Move-Out Exit Settlement Calculator Statement -->
+  <div class="modal-backdrop" id="moveOutSettlementModal" role="dialog" aria-modal="true" aria-labelledby="moveOutModalTitle" aria-hidden="true">
+    <div class="modal-card modal-lg">
+      <div class="modal-header">
+        <div>
+          <h3 id="moveOutModalTitle"><i class="fa-solid fa-calculator text-warning"></i> Move-Out Tenancy Settlement</h3>
+          <p class="modal-subtitle">Itemized final deductions calculation against security deposit for vacating tenant.</p>
+        </div>
+        <button class="modal-close" id="closeMoveOutModalBtn" aria-label="Close dialog">&times;</button>
+      </div>
+      <form id="moveOutSettlementForm">
+        <div class="modal-body">
+          <div class="settlement-calc-grid mb-3">
+            <div>
+              <div class="form-group mb-2">
+                <label for="settleTenantSelect">Vacating Tenant *</label>
+                <select id="settleTenantSelect" class="form-select" required>
+                  <option value="tenant-1">Rahul Verma - Room 1 (Ground Floor)</option>
+                </select>
+              </div>
+              <div class="form-group mb-2">
+                <label for="settleExitDate">Vacating / Exit Date *</label>
+                <input type="date" id="settleExitDate" class="form-control" required>
+              </div>
+              <div class="form-group mb-2">
+                <label for="settleOriginalDeposit">Security Deposit Held (<span class="currency-label">₹</span>) *</label>
+                <input type="number" id="settleOriginalDeposit" class="form-control" value="10000" readonly>
+              </div>
+              <div class="form-group mb-2">
+                <label for="settleNotes">Settlement Notes / Justification</label>
+                <textarea id="settleNotes" class="form-control" rows="2" placeholder="e.g. Move-out inspection performed on exit date..."></textarea>
+              </div>
+            </div>
+
+            <div class="settlement-deductions-list">
+              <strong style="color: var(--text-main); font-size: 0.9rem;"><i class="fa-solid fa-list-check text-primary"></i> Itemized Approved Deductions</strong>
+              <div class="settlement-line-item">
+                <span>Unpaid Monthly Rent (₹):</span>
+                <input type="number" id="settleUnpaidRent" class="form-control form-control-sm" style="width: 120px;" value="0" min="0">
+              </div>
+              <div class="settlement-line-item">
+                <span>Unpaid Electricity Units (₹):</span>
+                <input type="number" id="settleUnpaidElec" class="form-control form-control-sm" style="width: 120px;" value="0" min="0">
+              </div>
+              <div class="settlement-line-item">
+                <span>Repairs / Cleaning Maintenance (₹):</span>
+                <input type="number" id="settleMaintDeduct" class="form-control form-control-sm" style="width: 120px;" value="0" min="0">
+              </div>
+              <div class="settlement-line-item">
+                <span>Property Damage Deductions (₹):</span>
+                <input type="number" id="settleDamageDeduct" class="form-control form-control-sm" style="width: 120px;" value="0" min="0">
+              </div>
+              <div class="settlement-line-item">
+                <span>Other Contractual Charges (₹):</span>
+                <input type="number" id="settleOtherDeduct" class="form-control form-control-sm" style="width: 120px;" value="0" min="0">
+              </div>
+              <div class="d-flex justify-content-between align-items-center pt-2" style="border-top: 1.5px solid var(--border-subtle);">
+                <strong>Total Deductions:</strong>
+                <strong id="settleTotalDeductionsText" class="text-danger" style="font-size: 1.05rem;">₹0.00</strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- Refund / Deficit Summary Display Box -->
+          <div class="settlement-refund-box" id="settlementRefundBox">
+            <span style="font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; color: #059669;">Net Refund Payable to Tenant:</span>
+            <div style="font-size: 1.75rem; font-family: var(--font-heading); font-weight: 800; color: #10b981; margin-top: 0.25rem;" id="settleRefundPayableText">
+              ₹10,000.00
+            </div>
+            <p class="text-muted mb-0" style="font-size: 0.76rem;" id="settleRefundNote">Refund will be settled via verified UPI / Bank Transfer.</p>
+          </div>
+        </div>
+
+        <div class="modal-footer d-flex justify-content-between align-items-center">
+          <button type="button" class="btn btn-secondary" id="cancelMoveOutBtn">Cancel</button>
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-outline" id="printSettlementStatementBtn">
+              <i class="fa-solid fa-print"></i> Print Statement
+            </button>
+            <button type="submit" class="btn btn-primary" id="confirmMoveOutSettlementBtn">
+              <i class="fa-solid fa-check"></i> Finalize &amp; Record Settlement
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 18: Digital Verified Payment Receipt Modal -->
+  <div class="modal-backdrop" id="paymentReceiptModal" role="dialog" aria-modal="true" aria-labelledby="receiptModalTitle" aria-hidden="true">
+    <div class="modal-card modal-md">
+      <div class="modal-header no-print">
+        <h3 id="receiptModalTitle"><i class="fa-solid fa-receipt text-success"></i> Payment Receipt</h3>
+        <button class="modal-close" id="closePaymentReceiptBtn" aria-label="Close dialog">&times;</button>
+      </div>
+      <div class="modal-body p-4" id="printableReceiptArea" style="background: #ffffff; color: #1e293b;">
+        <div style="text-align: center; border-bottom: 2px dashed #cbd5e1; padding-bottom: 14px; margin-bottom: 14px;">
+          <h2 style="margin: 0; color: #0f172a; font-family: var(--font-heading);">RentPulse PRO</h2>
+          <span style="font-size: 0.8rem; color: #64748b; font-weight: 600;">OFFICIAL RENT &amp; UTILITY PAYMENT RECEIPT</span>
+          <div style="margin-top: 6px;">
+            <span class="badge" style="background: #dcfce7; color: #15803d; font-weight: 700; padding: 4px 10px; border-radius: 999px;">
+              <i class="fa-solid fa-shield-check"></i> Verified by Landlord
+            </span>
+          </div>
+        </div>
+        <table style="width: 100%; font-size: 0.85rem; line-height: 1.8; margin-bottom: 14px;">
+          <tr><td style="color: #64748b;">Receipt ID:</td><td style="text-align: right; font-weight: bold; font-family: monospace;" id="receiptIdText">RCP-202610-101</td></tr>
+          <tr><td style="color: #64748b;">Payment Date:</td><td style="text-align: right; font-weight: 600;" id="receiptDateText">23 Oct 2026</td></tr>
+          <tr><td style="color: #64748b;">Tenant Name:</td><td style="text-align: right; font-weight: 600;" id="receiptTenantText">Rahul Verma</td></tr>
+          <tr><td style="color: #64748b;">Room / Property:</td><td style="text-align: right; font-weight: 600;" id="receiptRoomText">Room 1 (Ground Floor)</td></tr>
+          <tr><td style="color: #64748b;">Billing Month:</td><td style="text-align: right; font-weight: 600;" id="receiptMonthText">October 2026</td></tr>
+          <tr><td style="color: #64748b;">Payment Mode:</td><td style="text-align: right; font-weight: 600;" id="receiptModeText">UPI Transfer</td></tr>
+        </table>
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; text-align: center; margin-bottom: 14px;">
+          <span style="font-size: 0.75rem; text-transform: uppercase; color: #64748b; font-weight: 700;">Amount Received &amp; Verified</span>
+          <div style="font-size: 1.8rem; font-weight: 800; color: #15803d; margin-top: 2px;" id="receiptAmountText">₹5,520.00</div>
+          <span style="font-size: 0.78rem; color: #64748b;" id="receiptBalanceText">Remaining Balance Due: ₹0.00</span>
+        </div>
+        <div style="font-size: 0.72rem; color: #94a3b8; text-align: center; border-top: 1px solid #e2e8f0; padding-top: 10px;">
+          This is an authorized, digitally recorded electronic payment receipt generated by RentPulse PRO.
+        </div>
+      </div>
+      <div class="modal-footer no-print d-flex justify-content-between align-items-center">
+        <button type="button" class="btn btn-secondary" id="closePaymentReceiptFooterBtn">Close</button>
+        <div class="d-flex gap-2">
+          <button type="button" class="btn btn-success" id="receiptWhatsAppShareBtn">
+            <i class="fa-brands fa-whatsapp"></i> Share on WhatsApp
+          </button>
+          <button type="button" class="btn btn-primary" id="receiptPrintBtn">
+            <i class="fa-solid fa-print"></i> Print Receipt
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 19: Offline Draft Bills & Sync Queue Modal -->
+  <div class="modal-backdrop" id="offlineSyncModal" role="dialog" aria-modal="true" aria-labelledby="offlineSyncTitle" aria-hidden="true">
+    <div class="modal-card modal-md">
+      <div class="modal-header">
+        <div>
+          <h3 id="offlineSyncTitle"><i class="fa-solid fa-cloud-arrow-up text-primary"></i> Offline Sync Queue</h3>
+          <p class="modal-subtitle">Inspect local drafts and pending changes waiting to sync to Google Sheets.</p>
+        </div>
+        <button class="modal-close" id="closeOfflineSyncBtn" aria-label="Close dialog">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="offlineQueueList" style="display: flex; flex-direction: column; gap: 0.65rem;">
+          <div class="notif-empty-state">
+            <i class="fa-solid fa-circle-check text-success" style="font-size: 2rem;"></i>
+            <p>All records are synchronized!</p>
+            <small class="text-muted">No pending offline drafts or queued actions.</small>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer d-flex justify-content-between align-items-center">
+        <button type="button" class="btn btn-secondary" id="closeOfflineSyncFooterBtn">Close</button>
+        <button type="button" class="btn btn-primary" id="syncOfflineQueueNowBtn">
+          <i class="fa-solid fa-rotate"></i> Sync All Pending Drafts Now
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Shelf -->
+  <div class="toast-shelf" id="toastShelf"></div>
+
+  <!-- Chart.js for trends -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
