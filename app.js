@@ -2926,6 +2926,12 @@ function login(role, profile = {}, rememberMe = true) {
   renderAll();
   closeModal('authModal');
 
+  // Immediately pull authorized role-based records from Google Sheets
+  if (appState.googleSheet?.webAppUrl && sessionToken) {
+    pullFromGoogleSheets({ silent: true, force: true }).catch(() => {});
+    startAutoSyncPolling();
+  }
+
   if (profile.mustChangePassword) {
     openForcePasswordChangeModal(appState.auth.currentUser);
   }
@@ -6874,8 +6880,8 @@ document.addEventListener('DOMContentLoaded', () => {
   renderSecurityDeposits();
   prefillBillingForm();
 
-  // Load latest records from Google Sheets on initialization and start polling
-  if (appState.googleSheet?.webAppUrl) {
+  // Load latest records from Google Sheets on initialization if user is authenticated
+  if (appState.googleSheet?.webAppUrl && appState.auth?.isAuthenticated && (appState.auth?.currentUser?.sessionToken || appState.auth?.sessionToken)) {
     pullFromGoogleSheets({ silent: true }).catch(() => {});
     startAutoSyncPolling();
   }

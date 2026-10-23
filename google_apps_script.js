@@ -115,9 +115,16 @@ function doPost(e) {
       return handleCheckUpdates(ss, data);
     }
 
-    // Full Read/Pull Website Data from Google Sheets
+    // Full Read/Pull Website Data from Google Sheets (Session Required)
     if (action === "sync_pull" || action === "get_all_data") {
       var pullSession = verifySession(ss, data.sessionToken);
+      if (!pullSession) {
+        return jsonResponse({
+          status: "error",
+          code: "UNAUTHORIZED",
+          message: "Valid session token required to pull records. Please log in."
+        });
+      }
       return handleSyncPull(ss, pullSession);
     }
 
@@ -292,6 +299,9 @@ function doPost(e) {
       return handleGetNotifications(ss, session);
     }
     if (action === "create_notification") {
+      if (session.role === "tenant" && (data.role === "all" || data.role === "tenant")) {
+        return forbiddenResponse("Tenants can only send notifications to property managers.");
+      }
       return handleCreateNotification(ss, session, data);
     }
     if (action === "mark_notification_read") {
@@ -2519,12 +2529,12 @@ function handleSyncPull(ss, session) {
     meterSerial: property.Meter_Serial || "MTR-101",
     currentMeter: Number(property.Current_Meter) || (cleanBills.length > 0 ? cleanBills[cleanBills.length - 1].currReading : 1265.0),
     currency: "₹",
-    tenant: activeTenant ? {
+    tenant: (activeTenant && (session.role === "admin" || session.role === "owner" || (session.role === "tenant" && session.tenantId === activeTenant.Tenant_ID))) ? {
       name: activeTenant.Name || "",
-      phone: activeTenant.Phone || "",
+      phone: (session.role === "admin" || session.role === "owner" || session.tenantId === activeTenant.Tenant_ID) ? (activeTenant.Phone || "") : "",
       moveInDate: activeTenancy ? activeTenancy.Start_Date : "",
       deposit: activeTenancy ? Number(activeTenancy.Deposit) || 0 : 0,
-      idProof: activeTenant.ID_Proof || "",
+      idProof: (session.role === "admin" || session.role === "owner") ? (activeTenant.ID_Proof || "") : "",
       emergency: activeTenant.Emergency_Contact || ""
     } : null
   } : null;
@@ -3324,6 +3334,16 @@ function handleTenantRegister(ss, data) {
       return jsonResponse({ status: "error", code: "INVALID_INPUT", message: "Full legal name, email, and mobile number are required." });
     }
 
+    // Rate Limiting: 5 registrations per 10 minutes per phone/email
+    var regRateLimitKey = "rl_reg_" + (phone.replace(/[^0-9]/g, "") || email);
+    if (!checkRateLimit(regRateLimitKey, 5, 600)) {
+      return jsonResponse({
+        status: "error",
+        code: "TOO_MANY_REQUESTS",
+        message: "Too many registration attempts from this contact. Please wait 10 minutes before submitting again."
+      });
+    }
+
     // Check for duplicate pending registration
     var existingRegs = getRowsAsObjects(regSheet);
     for (var r = 0; r < existingRegs.length; r++) {
@@ -3364,27 +3384,27 @@ function handleTenantRegister(ss, data) {
     var now = new Date().toISOString();
     var newRow = [
       registrationId,
-      fullName,
-      email,
-      phone,
-      propertyId,
-      unitNumber,
-      address,
-      emergencyContactName,
-      emergencyContactPhone,
-      idProofType,
-      idProofNumber,
-      idFrontRef,
-      idBackRef,
-      photoRef,
-      data.additionalDocsRef || "",
+      sanitizeSpreadsheetValue(fullName),
+      sanitizeSpreadsheetValue(email),
+      sanitizeSpreadsheetValue(phone),
+      sanitizeSpreadsheetValue(propertyId),
+      sanitizeSpreadsheetValue(unitNumber),
+      sanitizeSpreadsheetValue(address),
+      sanitizeSpreadsheetValue(emergencyContactName),
+      sanitizeSpreadsheetValue(emergencyContactPhone),
+      sanitizeSpreadsheetValue(idProofType),
+      sanitizeSpreadsheetValue(idProofNumber),
+      sanitizeSpreadsheetValue(idFrontRef),
+      sanitizeSpreadsheetValue(idBackRef),
+      sanitizeSpreadsheetValue(photoRef),
+      sanitizeSpreadsheetValue(data.additionalDocsRef || ""),
       "Pending",
       now,
       "", // Reviewed_By
       "", // Reviewed_At
       "", // Rejection_Reason
       occupantsCount,
-      intendedMoveIn,
+      sanitizeSpreadsheetValue(intendedMoveIn),
       ""  // Tenant_User_ID
     ];
 
@@ -3470,9 +3490,19 @@ function handleTenantCheckStatus(ss, data) {
     return jsonResponse({ status: "error", code: "INVALID_INPUT", message: "Registration ID, mobile number, or email is required." });
   }
 
+  // Rate Limiting: 10 status queries per 5 minutes per query key
+  var cleanQueryDigits = query.replace(/[^0-9]/g, "");
+  var statusRateKey = "rl_status_" + (cleanQueryDigits.length >= 7 ? cleanQueryDigits : query);
+  if (!checkRateLimit(statusRateKey, 10, 300)) {
+    return jsonResponse({
+      status: "error",
+      code: "TOO_MANY_REQUESTS",
+      message: "Too many status requests. Please wait a few minutes before checking again."
+    });
+  }
+
   var rows = getRowsAsObjects(regSheet);
   var matched = null;
-  var cleanQueryDigits = query.replace(/[^0-9]/g, "");
 
   // Match in reverse to return latest application
   for (var i = rows.length - 1; i >= 0; i--) {
@@ -3495,14 +3525,21 @@ function handleTenantCheckStatus(ss, data) {
     });
   }
 
+  // Privacy Protection: Mask contact information in public status check
+  var rawPhone = (matched.Phone || "").toString();
+  var maskedPhone = rawPhone.length > 5 ? (rawPhone.slice(0, 3) + "*****" + rawPhone.slice(-2)) : rawPhone;
+  var rawEmail = (matched.Email || "").toString();
+  var atPos = rawEmail.indexOf("@");
+  var maskedEmail = atPos > 2 ? (rawEmail.slice(0, 2) + "***" + rawEmail.slice(atPos)) : rawEmail;
+
   return jsonResponse({
     status: "success",
     success: true,
     registration: {
       registrationId: matched.Registration_ID,
       fullName: matched.Full_Name,
-      email: matched.Email,
-      phone: matched.Phone,
+      email: maskedEmail,
+      phone: maskedPhone,
       propertyId: matched.Property_ID,
       unitNumber: matched.Unit_Number,
       status: matched.Registration_Status || "Pending",
@@ -3907,9 +3944,32 @@ function handleAdminGetDocument(ss, session, data) {
   if (!data || !data.fileRef) {
     return jsonResponse({ status: "error", message: "fileRef is required" });
   }
-  var fileId = data.fileRef.replace(/^drive:/, "");
+  var fileId = data.fileRef.replace(/^drive:/, "").trim();
+  if (!fileId) {
+    return jsonResponse({ status: "error", message: "Invalid document reference" });
+  }
+
   try {
+    var folder = getOrCreateTenantDocumentsFolder();
+    if (!folder) {
+      return jsonResponse({ status: "error", message: "Tenant documents repository is unavailable." });
+    }
+
     var file = DriveApp.getFileById(fileId);
+    var parents = file.getParents();
+    var isAuthorizedFolder = false;
+    while (parents.hasNext()) {
+      if (parents.next().getId() === folder.getId()) {
+        isAuthorizedFolder = true;
+        break;
+      }
+    }
+
+    if (!isAuthorizedFolder) {
+      logAudit(ss, session.userId, session.role, "UNAUTHORIZED_DRIVE_READ", "Drive", fileId, "Access denied: file is not in tenant documents folder");
+      return forbiddenResponse("Access denied: The requested file is not within the authorized tenant documents repository.");
+    }
+
     var blob = file.getBlob();
     var base64 = Utilities.base64Encode(blob.getBytes());
     return jsonResponse({
