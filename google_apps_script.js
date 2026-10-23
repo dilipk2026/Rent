@@ -124,23 +124,18 @@ function doPost(e) {
     // Bidirectional Write/Push Website Data to Google Sheets
     if (action === "sync_push" || action === "sync_all") {
       var pushSession = verifySession(ss, data.sessionToken);
-      if (pushSession && pushSession.role !== "owner" && pushSession.role !== "admin") {
-        return forbiddenResponse("Only property owners and administrators can sync data.");
+      if (!pushSession || (pushSession.role !== "owner" && pushSession.role !== "admin")) {
+        return forbiddenResponse("Only authenticated property owners and administrators can sync data.");
       }
       return handleSyncPush(ss, pushSession, data);
     }
 
     if (action === "sync_bills") {
       var syncSession = verifySession(ss, data.sessionToken);
-      if (syncSession && syncSession.role !== "owner" && syncSession.role !== "admin") {
-        return forbiddenResponse("Only property owners and administrators can batch sync ledger.");
+      if (!syncSession || (syncSession.role !== "owner" && syncSession.role !== "admin")) {
+        return forbiddenResponse("Only authenticated property owners and administrators can batch sync ledger.");
       }
-      var ownerSession = syncSession || {
-        ownerId: (data.owner && data.owner.ownerId) || "owner-1",
-        userId: (data.owner && data.owner.userId) || (syncSession ? syncSession.userId : "owner-user-1"),
-        role: "owner"
-      };
-      return handleOwnerSyncBills(ss, ownerSession, data);
+      return handleOwnerSyncBills(ss, syncSession, data);
     }
 
     // Protected Actions: Session Verification Required
@@ -252,6 +247,11 @@ function doPost(e) {
     if (action === "create_bill") {
       if (session.role !== "owner" && session.role !== "admin") return forbiddenResponse("Only property owners and administrators can generate bills.");
       return handleCreateBill(ss, session, data);
+    }
+
+    if (action === "delete_bill") {
+      if (session.role !== "owner" && session.role !== "admin") return forbiddenResponse("Only property owners and administrators can delete bills.");
+      return handleDeleteBill(ss, session, data);
     }
 
     if (action === "record_payment") {
@@ -1494,12 +1494,14 @@ function handleAdminUpdateWebhookConfig(ss, session, data) {
     return jsonResponse({ status: "error", code: "INVALID_URL", message: "A secure HTTPS webhook URL is required." });
   }
 
-  logAudit(ss, session.userId, session.role, "ADMIN_UPDATE_WEBHOOK", "Settings", "Webhook_URL", "Webhook URL updated");
+  setAdminConfigValue(ss, "webhook_deployment_url", url, "Configured Webhook Deployment URL");
+  logAudit(ss, session.userId, session.role, "ADMIN_UPDATE_WEBHOOK", "_Admin_Config", "webhook_deployment_url", "Webhook URL updated: " + url);
 
   return jsonResponse({
     status: "success",
     success: true,
-    message: "Webhook configuration verified and recorded."
+    webhookUrl: url,
+    message: "Webhook configuration verified and permanently recorded in _Admin_Config."
   });
 }
 
@@ -1817,6 +1819,77 @@ function handleCreateBill(ss, session, data) {
 
   } finally {
     lock.releaseLock();
+  }
+}
+
+function handleDeleteBill(ss, session, data) {
+  var lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(10000); // 10s concurrency wait
+  } catch (lockErr) {
+    return jsonResponse({ status: "error", code: "CONCURRENCY_TIMEOUT", message: "Server busy, please retry in a moment." });
+  }
+
+  try {
+    var targetId = (data.billId || data.id || "").toString().trim();
+    var targetNo = (data.billNumber || "").toString().trim();
+
+    if (!targetId && !targetNo) {
+      return jsonResponse({ status: "error", code: "INVALID_INPUT", message: "Bill ID or Bill Number is required for deletion." });
+    }
+
+    var billsSheet = ss.getSheetByName("Rent_Bills");
+    if (!billsSheet || billsSheet.getLastRow() < 2) {
+      return jsonResponse({ status: "error", code: "NOT_FOUND", message: "No bills found in spreadsheet." });
+    }
+
+    var dataRange = billsSheet.getDataRange();
+    var values = dataRange.getValues();
+    var headers = values[0];
+    var idCol = headers.indexOf("Bill_ID");
+    var noCol = headers.indexOf("Bill_Number");
+    var ownerCol = headers.indexOf("Owner_ID");
+
+    var deleted = false;
+    var matchedBillNo = "";
+
+    // Search backwards to safely locate and delete matching bill row
+    for (var r = values.length - 1; r >= 1; r--) {
+      var row = values[r];
+      var rowId = (idCol !== -1 && row[idCol]) ? row[idCol].toString().trim() : "";
+      var rowNo = (noCol !== -1 && row[noCol]) ? row[noCol].toString().trim() : "";
+      var rowOwner = (ownerCol !== -1 && row[ownerCol]) ? row[ownerCol].toString().trim() : "";
+
+      var matches = (targetId && rowId === targetId) || (targetNo && rowNo === targetNo);
+      if (matches) {
+        // Enforce owner authorization: owners can only delete their own bills
+        if (session.role !== "admin" && session.ownerId && rowOwner && rowOwner !== session.ownerId) {
+          return forbiddenResponse("You do not have permission to delete this bill.");
+        }
+        matchedBillNo = rowNo || rowId;
+        billsSheet.deleteRow(r + 1);
+        deleted = true;
+        break;
+      }
+    }
+
+    if (!deleted) {
+      return jsonResponse({ status: "error", code: "NOT_FOUND", message: "Bill not found in spreadsheet." });
+    }
+
+    logAudit(ss, session.userId, session.role, "DELETE_BILL", "Rent_Bills", targetId || targetNo, "Deleted bill #" + matchedBillNo);
+
+    return jsonResponse({
+      status: "success",
+      success: true,
+      message: "Bill #" + matchedBillNo + " deleted successfully from Google Sheets.",
+      billId: targetId,
+      billNumber: targetNo
+    });
+  } catch (err) {
+    return jsonResponse({ status: "error", code: "DELETE_FAILED", message: err.toString() });
+  } finally {
+    try { lock.releaseLock(); } catch (_) {}
   }
 }
 
@@ -2535,6 +2608,12 @@ function handleSyncPull(ss, session) {
     }
   }
 
+  var cloudWebhookUrl = undefined;
+  if (session && (session.role === "admin" || session.role === "owner")) {
+    var adminCfg = getAdminConfig(ss);
+    cloudWebhookUrl = adminCfg.webhook_deployment_url || undefined;
+  }
+
   return jsonResponse({
     status: "success",
     success: true,
@@ -2545,7 +2624,8 @@ function handleSyncPull(ss, session) {
     bills: cleanBills,
     payments: payments,
     accounts: accountsList,
-    registrations: registrationsList
+    registrations: registrationsList,
+    webhookUrl: cloudWebhookUrl
   });
 }
 
@@ -2564,11 +2644,21 @@ function handleSyncPush(ss, session, data) {
     var room = data.room;
     var bills = Array.isArray(data.bills) ? data.bills : [];
 
-    // 1. Update Owners sheet
+    // 1. Update Owners sheet with dynamic row matching
     if (owner && owner.name) {
       var ownersSheet = ss.getSheetByName("Owners");
       var ownerRows = getRowsAsObjects(ownersSheet);
-      if (ownerRows.length > 0) {
+      var targetOwnerId = (session && session.ownerId) || (owner && owner.ownerId) || "owner-1";
+      var matchedOwnerRow = -1;
+
+      for (var oi = 0; oi < ownerRows.length; oi++) {
+        if (ownerRows[oi].Owner_ID === targetOwnerId || ownerRows[oi].User_ID === (session && session.userId)) {
+          matchedOwnerRow = oi + 2;
+          break;
+        }
+      }
+
+      if (matchedOwnerRow > 0) {
         var oHeaders = ownersSheet.getDataRange().getValues()[0];
         var nameCol = oHeaders.indexOf("Name") + 1;
         var phoneCol = oHeaders.indexOf("Phone") + 1;
@@ -2576,21 +2666,31 @@ function handleSyncPush(ss, session, data) {
         var upiCol = oHeaders.indexOf("UPI_ID") + 1;
         var updatedCol = oHeaders.indexOf("Updated_At") + 1;
         
-        if (nameCol > 0) ownersSheet.getRange(2, nameCol).setValue(owner.name);
-        if (phoneCol > 0) ownersSheet.getRange(2, phoneCol).setValue(owner.phone || "");
-        if (addrCol > 0) ownersSheet.getRange(2, addrCol).setValue(owner.address || "");
-        if (upiCol > 0) ownersSheet.getRange(2, upiCol).setValue(owner.upiId || "");
-        if (updatedCol > 0) ownersSheet.getRange(2, updatedCol).setValue(nowIso);
+        if (nameCol > 0) ownersSheet.getRange(matchedOwnerRow, nameCol).setValue(owner.name);
+        if (phoneCol > 0) ownersSheet.getRange(matchedOwnerRow, phoneCol).setValue(owner.phone || "");
+        if (addrCol > 0) ownersSheet.getRange(matchedOwnerRow, addrCol).setValue(owner.address || "");
+        if (upiCol > 0) ownersSheet.getRange(matchedOwnerRow, upiCol).setValue(owner.upiId || "");
+        if (updatedCol > 0) ownersSheet.getRange(matchedOwnerRow, updatedCol).setValue(nowIso);
       } else {
-        ownersSheet.appendRow(["owner-1", "user-owner-1", owner.name, owner.phone || "", owner.address || "", owner.upiId || "", nowIso, nowIso]);
+        ownersSheet.appendRow([targetOwnerId, (session && session.userId) || "user-owner-1", owner.name, owner.phone || "", owner.address || "", owner.upiId || "", nowIso, nowIso]);
       }
     }
 
-    // 2. Update Properties sheet
+    // 2. Update Properties sheet with dynamic row matching
     if (room && room.title) {
       var propsSheet = ss.getSheetByName("Properties");
       var propRows = getRowsAsObjects(propsSheet);
-      if (propRows.length > 0) {
+      var targetPropId = (room && (room.id || room.propertyId)) || "prop-1";
+      var matchedPropRow = -1;
+
+      for (var pi = 0; pi < propRows.length; pi++) {
+        if (propRows[pi].Property_ID === targetPropId || propRows[pi].Owner_ID === ((session && session.ownerId) || "owner-1")) {
+          matchedPropRow = pi + 2;
+          break;
+        }
+      }
+
+      if (matchedPropRow > 0) {
         var pHeaders = propsSheet.getDataRange().getValues()[0];
         var titleCol = pHeaders.indexOf("Title") + 1;
         var rentCol = pHeaders.indexOf("Base_Rent") + 1;
@@ -2599,23 +2699,33 @@ function handleSyncPush(ss, session, data) {
         var currCol = pHeaders.indexOf("Current_Meter") + 1;
         var pUpdatedCol = pHeaders.indexOf("Updated_At") + 1;
 
-        if (titleCol > 0) propsSheet.getRange(2, titleCol).setValue(room.title);
-        if (rentCol > 0) propsSheet.getRange(2, rentCol).setValue(Number(room.baseRent) || 5000);
-        if (rateCol > 0) propsSheet.getRange(2, rateCol).setValue(Number(room.defaultElecRate) || 8.0);
-        if (meterCol > 0) propsSheet.getRange(2, meterCol).setValue(room.meterSerial || "MTR-101");
-        if (currCol > 0) propsSheet.getRange(2, currCol).setValue(Number(room.currentMeter) || 0);
-        if (pUpdatedCol > 0) propsSheet.getRange(2, pUpdatedCol).setValue(nowIso);
+        if (titleCol > 0) propsSheet.getRange(matchedPropRow, titleCol).setValue(room.title);
+        if (rentCol > 0) propsSheet.getRange(matchedPropRow, rentCol).setValue(Number(room.baseRent) || 5000);
+        if (rateCol > 0) propsSheet.getRange(matchedPropRow, rateCol).setValue(Number(room.defaultElecRate) || 8.0);
+        if (meterCol > 0) propsSheet.getRange(matchedPropRow, meterCol).setValue(room.meterSerial || "MTR-101");
+        if (currCol > 0) propsSheet.getRange(matchedPropRow, currCol).setValue(Number(room.currentMeter) || 0);
+        if (pUpdatedCol > 0) propsSheet.getRange(matchedPropRow, pUpdatedCol).setValue(nowIso);
       } else {
-        propsSheet.appendRow(["prop-1", "owner-1", room.title, Number(room.baseRent) || 5000, Number(room.defaultElecRate) || 8.0, room.meterSerial || "MTR-101", Number(room.currentMeter) || 0, nowIso, nowIso]);
+        propsSheet.appendRow([targetPropId, (session && session.ownerId) || "owner-1", room.title, Number(room.baseRent) || 5000, Number(room.defaultElecRate) || 8.0, room.meterSerial || "MTR-101", Number(room.currentMeter) || 0, nowIso, nowIso]);
       }
     }
 
-    // 3. Update Tenants & Tenancies if tenant information is included
+    // 3. Update Tenants & Tenancies with dynamic row matching
     if (room && room.tenant) {
       var tenantsSheet = ss.getSheetByName("Tenants");
       var tenanciesSheet = ss.getSheetByName("Tenancies");
       var tRows = getRowsAsObjects(tenantsSheet);
-      if (tRows.length > 0) {
+      var targetTenantId = (room.tenant && (room.tenant.id || room.tenant.tenantId)) || "tenant-1";
+      var matchedTenantRow = -1;
+
+      for (var ti = 0; ti < tRows.length; ti++) {
+        if (tRows[ti].Tenant_ID === targetTenantId || (room.tenant.phone && tRows[ti].Phone === room.tenant.phone)) {
+          matchedTenantRow = ti + 2;
+          break;
+        }
+      }
+
+      if (matchedTenantRow > 0) {
         var tHeaders = tenantsSheet.getDataRange().getValues()[0];
         var tNameCol = tHeaders.indexOf("Name") + 1;
         var tPhoneCol = tHeaders.indexOf("Phone") + 1;
@@ -2623,28 +2733,48 @@ function handleSyncPush(ss, session, data) {
         var tEmergCol = tHeaders.indexOf("Emergency_Contact") + 1;
         var tUpdatedCol = tHeaders.indexOf("Updated_At") + 1;
 
-        if (tNameCol > 0) tenantsSheet.getRange(2, tNameCol).setValue(room.tenant.name || "");
-        if (tPhoneCol > 0) tenantsSheet.getRange(2, tPhoneCol).setValue(room.tenant.phone || "");
-        if (tProofCol > 0) tenantsSheet.getRange(2, tProofCol).setValue(room.tenant.idProof || "");
-        if (tEmergCol > 0) tenantsSheet.getRange(2, tEmergCol).setValue(room.tenant.emergency || "");
-        if (tUpdatedCol > 0) tenantsSheet.getRange(2, tUpdatedCol).setValue(nowIso);
+        if (tNameCol > 0) tenantsSheet.getRange(matchedTenantRow, tNameCol).setValue(room.tenant.name || "");
+        if (tPhoneCol > 0) tenantsSheet.getRange(matchedTenantRow, tPhoneCol).setValue(room.tenant.phone || "");
+        if (tProofCol > 0) tenantsSheet.getRange(matchedTenantRow, tProofCol).setValue(room.tenant.idProof || "");
+        if (tEmergCol > 0) tenantsSheet.getRange(matchedTenantRow, tEmergCol).setValue(room.tenant.emergency || "");
+        if (tUpdatedCol > 0) tenantsSheet.getRange(matchedTenantRow, tUpdatedCol).setValue(nowIso);
+      } else {
+        tenantsSheet.appendRow([targetTenantId, "user-tenant-" + Date.now(), room.tenant.name || "", room.tenant.phone || "", room.tenant.idProof || "", room.tenant.emergency || "", nowIso, nowIso]);
       }
+
       var tyRows = getRowsAsObjects(tenanciesSheet);
-      if (tyRows.length > 0) {
+      var propIdForTenancy = (room && (room.id || room.propertyId)) || "prop-1";
+      var matchedTenancyRow = -1;
+
+      for (var tyi = 0; tyi < tyRows.length; tyi++) {
+        if (tyRows[tyi].Property_ID === propIdForTenancy || tyRows[tyi].Tenant_ID === targetTenantId) {
+          matchedTenancyRow = tyi + 2;
+          break;
+        }
+      }
+
+      if (matchedTenancyRow > 0) {
         var tyHeaders = tenanciesSheet.getDataRange().getValues()[0];
         var tyStartCol = tyHeaders.indexOf("Start_Date") + 1;
         var tyDepCol = tyHeaders.indexOf("Deposit") + 1;
         var tyStatCol = tyHeaders.indexOf("Status") + 1;
-        if (tyStartCol > 0 && room.tenant.moveInDate) tenanciesSheet.getRange(2, tyStartCol).setValue(room.tenant.moveInDate);
-        if (tyDepCol > 0) tenanciesSheet.getRange(2, tyDepCol).setValue(Number(room.tenant.deposit) || 0);
-        if (tyStatCol > 0) tenanciesSheet.getRange(2, tyStatCol).setValue("active");
+        if (tyStartCol > 0 && room.tenant.moveInDate) tenanciesSheet.getRange(matchedTenancyRow, tyStartCol).setValue(room.tenant.moveInDate);
+        if (tyDepCol > 0) tenanciesSheet.getRange(matchedTenancyRow, tyDepCol).setValue(Number(room.tenant.deposit) || 0);
+        if (tyStatCol > 0) tenanciesSheet.getRange(matchedTenancyRow, tyStatCol).setValue("active");
+      } else {
+        tenanciesSheet.appendRow(["tenancy-" + Date.now(), propIdForTenancy, (session && session.ownerId) || "owner-1", targetTenantId, room.tenant.moveInDate || "", "", Number(room.tenant.deposit) || 0, "active", nowIso, nowIso]);
       }
     } else if (room && room.tenant === null) {
       var tenanciesSheet = ss.getSheetByName("Tenancies");
-      if (tenanciesSheet && tenanciesSheet.getLastRow() >= 2) {
-        var tyHeaders = tenanciesSheet.getDataRange().getValues()[0];
-        var tyStatCol = tyHeaders.indexOf("Status") + 1;
-        if (tyStatCol > 0) tenanciesSheet.getRange(2, tyStatCol).setValue("vacated");
+      var tyRows = getRowsAsObjects(tenanciesSheet);
+      var propIdForVacate = (room && (room.id || room.propertyId)) || "prop-1";
+      for (var tyi = 0; tyi < tyRows.length; tyi++) {
+        if (tyRows[tyi].Property_ID === propIdForVacate && tyRows[tyi].Status === "active") {
+          var tyHeaders = tenanciesSheet.getDataRange().getValues()[0];
+          var tyStatCol = tyHeaders.indexOf("Status") + 1;
+          if (tyStatCol > 0) tenanciesSheet.getRange(tyi + 2, tyStatCol).setValue("vacated");
+          break;
+        }
       }
     }
 

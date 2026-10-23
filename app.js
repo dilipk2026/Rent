@@ -1349,6 +1349,8 @@ function deleteBill(billId) {
   if (!bill) return;
 
   if (confirm(`Delete bill #${bill.billNumber} for ${formatMonthYear(bill.billingMonth)}?`)) {
+    const deletedBillId = bill.id;
+    const deletedBillNo = bill.billNumber;
     appState.bills = appState.bills.filter(b => b.id !== billId);
     
     // Resynchronize room currentMeter if latest bill was deleted
@@ -1357,10 +1359,36 @@ function deleteBill(billId) {
     }
     
     saveState();
-    showToast(`Bill #${bill.billNumber} deleted`, 'info');
+    showToast(`Bill #${deletedBillNo} deleted`, 'info');
     renderAll();
     prefillBillingForm();
-    if (appState.googleSheet.webAppUrl) {
+
+    // Notify backend Google Sheets to permanently remove the record from Rent_Bills
+    const webAppUrl = appState.googleSheet?.webAppUrl;
+    const sessionToken = appState.auth?.currentUser?.sessionToken || appState.auth?.sessionToken || '';
+    if (webAppUrl && isValidGoogleAppsScriptUrl(webAppUrl)) {
+      fetch(webAppUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          action: 'delete_bill',
+          sessionToken: sessionToken,
+          billId: deletedBillId,
+          billNumber: deletedBillNo
+        })
+      })
+      .then(res => res.json())
+      .then(res => {
+        if (res && res.status === 'success') {
+          console.log('Bill deleted from Google Sheets:', deletedBillNo);
+        } else {
+          console.warn('Backend bill deletion notice:', res?.message);
+        }
+      })
+      .catch(err => {
+        console.warn('Could not contact Google Sheets for bill deletion:', err);
+      });
+
       syncToGoogleSheets(true);
     }
   }
@@ -1848,6 +1876,17 @@ async function pullFromGoogleSheets({ silent = true, force = false } = {}) {
       }
     }
 
+    // 6. Synchronize Webhook URL from cloud config if user is admin/owner
+    if (data.webhookUrl && typeof data.webhookUrl === 'string' && data.webhookUrl.startsWith('https://')) {
+      const curRole = appState.auth?.currentUser?.role;
+      if (curRole === 'admin' || curRole === 'owner') {
+        if (!appState.googleSheet.webAppUrl || appState.googleSheet.webAppUrl !== data.webhookUrl) {
+          appState.googleSheet.webAppUrl = data.webhookUrl;
+          updateSettingsSyncMeta();
+        }
+      }
+    }
+
     appState.googleSheet.lastSyncedAt = data.lastModified || new Date().toISOString();
     saveState();
     renderAll();
@@ -2084,11 +2123,34 @@ function setupGoogleSheetSettings() {
       }
     }
 
-    // Persist configuration
+    // Persist configuration locally
     appState.googleSheet.webAppUrl = url;
     saveState();
     updateSyncStatusUI(url ? 'success' : 'idle');
     updateSettingsSyncMeta();
+
+    // Persist configuration to Google Sheets _Admin_Config
+    const sessionToken = appState.auth?.currentUser?.sessionToken || appState.auth?.sessionToken || '';
+    if (url && sessionToken) {
+      fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          action: 'admin_update_webhook_config',
+          sessionToken: sessionToken,
+          webhookUrl: url
+        })
+      })
+      .then(res => res.json())
+      .then(res => {
+        if (res && res.status === 'success') {
+          console.log('Webhook URL successfully backed up to Google Sheets _Admin_Config');
+        }
+      })
+      .catch(err => {
+        console.warn('Could not persist webhook to Google Sheets config sheet:', err);
+      });
+    }
 
     if (statusEl) {
       statusEl.style.display = 'block';
@@ -2432,11 +2494,12 @@ function setupSettings() {
 
   // Reset
   document.getElementById('resetAllBtn')?.addEventListener('click', () => {
-    if (confirm('Are you sure you want to delete all bills and reset data?')) {
+    if (confirm('Are you sure you want to delete all bills and reset data? (Your Google Sheets webhook URL will be preserved)')) {
       const currentAuth = appState.auth || defaultState.auth;
-      appState = { ...defaultState, bills: [], auth: currentAuth };
+      const currentGoogleSheet = appState.googleSheet || defaultState.googleSheet;
+      appState = { ...defaultState, bills: [], auth: currentAuth, googleSheet: currentGoogleSheet };
       saveState();
-      showToast('Data reset', 'info');
+      showToast('Data reset (webhook settings preserved)', 'info');
       renderAll();
     }
   });
