@@ -14,7 +14,7 @@
 
 const STORAGE_KEY = 'rentpulse_single_room_pro_v1';
 const AUTH_SALT = "rentpulse_sec_salt_2026";
-const DEFAULT_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbwizowSA6K9s2ofb3n9Y7ntsDOpsZsrOQ-t-5C0m05V797cvZYmEjC1h8mI0Xp9yWnM/exec";
+const DEFAULT_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbzLA3pb-642QlwSEEjB0OA28J3ohrXzfohBJNCG6I6OZ0g_yezhnoypTzpxoy3pjN3p/exec";
 
 // Default initial state
 const defaultState = {
@@ -262,7 +262,7 @@ function loadState() {
         ...defaultState.googleSheet,
         ...(parsed.googleSheet || {})
       };
-      if (!resolvedGsheet.webAppUrl || typeof resolvedGsheet.webAppUrl !== 'string' || !resolvedGsheet.webAppUrl.trim() || resolvedGsheet.webAppUrl.includes('vXgBBAt75Q')) {
+      if (!resolvedGsheet.webAppUrl || typeof resolvedGsheet.webAppUrl !== 'string' || !resolvedGsheet.webAppUrl.trim() || resolvedGsheet.webAppUrl.includes('vXgBBAt75Q') || resolvedGsheet.webAppUrl.includes('AKfycbwizowSA6K9')) {
         resolvedGsheet.webAppUrl = DEFAULT_WEBHOOK_URL;
       }
 
@@ -1692,7 +1692,7 @@ async function testCloudConnection(targetUrl = '', isSilent = false) {
   isConnectionTestInProgress = true;
   const startTime = Date.now();
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 10000);
+  const timeoutId = setTimeout(() => controller.abort(), 30000);
 
   try {
     const res = await fetch(url, {
@@ -1729,7 +1729,7 @@ async function testCloudConnection(targetUrl = '', isSilent = false) {
     const latency = Date.now() - startTime;
     let errMsg = 'Failed to connect to Google Sheets';
     if (err.name === 'AbortError') {
-      errMsg = 'Connection timed out (10s). Verify network connection and Google script deployment.';
+      errMsg = 'Connection timed out (30s). Google Cloud container warming up. Please try again.';
     } else if (err.message && err.message.includes('Failed to fetch')) {
       errMsg = 'Network request blocked. Ensure Web App is deployed with "Who has access: Anyone".';
     } else {
@@ -1754,7 +1754,7 @@ async function pullFromGoogleSheets({ silent = true, force = false } = {}) {
   updateSyncStatusUI('syncing', 'Pulling...');
 
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 12000);
+  const timeoutId = setTimeout(() => controller.abort(), 30000);
 
   try {
     const sessionToken = appState.auth?.currentUser?.sessionToken || appState.auth?.sessionToken || '';
@@ -1924,7 +1924,7 @@ async function pushToGoogleSheets({ silent = true } = {}) {
   updateSyncStatusUI('syncing', 'Saving...');
 
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 15000);
+  const timeoutId = setTimeout(() => controller.abort(), 35000);
 
   try {
     const sessionToken = appState.auth?.currentUser?.sessionToken || appState.auth?.sessionToken || '';
@@ -3370,7 +3370,7 @@ function setupLoginGate() {
       let netErrorMessage = '';
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 8000);
+        const timeoutId = setTimeout(() => controller.abort(), 25000);
         res = await fetch(appState.googleSheet.webAppUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },

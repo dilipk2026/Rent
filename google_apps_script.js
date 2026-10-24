@@ -59,6 +59,18 @@ var SCHEMAS = {
   ]
 };
 
+/**
+ * Run this function once directly in the Google Apps Script editor.
+ * It authorizes necessary permissions (Sheets, Drive, MailApp) and 
+ * automatically generates all 14 database sheets and initial accounts.
+ */
+function setup() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  ensureSchema(ss);
+  handleInitSystem(ss);
+  Logger.log("✅ RentPulse PRO Database initialized successfully! All sheets and sample accounts are ready.");
+}
+
 function doPost(e) {
   try {
     if (!e || !e.postData || !e.postData.contents) {
@@ -67,12 +79,8 @@ function doPost(e) {
 
     var data = JSON.parse(e.postData.contents);
     var action = data.action;
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
 
-    // Ensure database schema is ready
-    ensureSchema(ss);
-
-    // Public / Unauthenticated Actions
+    // Public / Fast ping check (responds in < 1s without hitting Sheet APIs)
     if (action === "ping" || action === "test_connection") {
       return jsonResponse({
         status: "success",
@@ -83,6 +91,19 @@ function doPost(e) {
         time: new Date().toISOString()
       });
     }
+
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+
+    // Cache schema check for 6 hours so every subsequent request is instant
+    var cache = CacheService.getScriptCache();
+    var schemaChecked = cache ? cache.get("rp_schema_verified") : null;
+    if (!schemaChecked) {
+      ensureSchema(ss);
+      if (cache) {
+        try { cache.put("rp_schema_verified", "true", 21600); } catch (e) {}
+      }
+    }
+
     if (action === "init_system") {
       return handleInitSystem(ss);
     }
